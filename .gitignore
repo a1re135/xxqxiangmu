@@ -1,0 +1,9 @@
+build/
+cmake-build-*/
+*.user
+
+*.db
+*.db-shm
+*.db-wal
+
+logs/
