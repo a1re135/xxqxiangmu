@@ -12,6 +12,7 @@ public:
     bool initialize();
     bool openDatabase();
     bool createTables();
+    bool insertSeedData();
 
 private:
     QSqlDatabase m_database;
