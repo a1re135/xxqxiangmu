@@ -12,10 +12,16 @@ public:
     bool initialize();
     bool openDatabase();
     bool createTables();
+    bool insertSeedData();
+
+    bool beginTransaction();
+    bool commitTransaction();
+    bool rollbackTransaction();
 
 private:
     QSqlDatabase m_database;
     QString m_databasePath;
+    bool configureDatabase();
 };
 
 #endif // DATABASEMANAGER_H
