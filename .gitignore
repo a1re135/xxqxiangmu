@@ -1,0 +1,21 @@
+# Qt Creator build directories
+build-*/
+build/
+cmake-build-*/
+
+# Qt Creator personal settings
+*.user
+*.user.*
+
+# SQLite generated databases
+*.db
+*.db-shm
+*.db-wal
+
+# Runtime logs
+logs/
+
+# General temporary files
+*.tmp
+*.swp
+*~
