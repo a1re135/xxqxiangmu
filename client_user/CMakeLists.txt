@@ -44,7 +44,7 @@ else()
     endif()
 endif()
 
-target_link_libraries(client_user PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
+target_link_libraries(client_user PRIVATE Qt${QT_VERSION_MAJOR}::Widgets ncs_core)
 
 set_target_properties(client_user PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER my.example.com
