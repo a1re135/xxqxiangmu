@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <QTimer>
+#include <QEvent>
 
 #include "service/userservice.h"
 
@@ -11,6 +12,9 @@ namespace Ui {
 class LoginWindow;
 }
 QT_END_NAMESPACE
+
+class QGraphicsOpacityEffect;
+class QLineEdit;
 
 class LoginWindow : public QMainWindow
 {
@@ -23,6 +27,10 @@ public:
 signals:
     void loginSucceeded(const UserInfo &user);
 
+protected:
+    void showEvent(QShowEvent *event) override;
+    bool eventFilter(QObject *watched, QEvent *event) override;
+
 private slots:
     void onGetCodeClicked();
     void onLoginClicked();
@@ -33,12 +41,20 @@ private:
     void setStatusMessage(const QString &message, bool error = true);
     void resetVerificationState();
 
+    // --- visual polish helpers ---
+    void applyCardElevation();
+    void installFocusGlow(QLineEdit *lineEdit);
+    void playShakeAnimation(QWidget *target);
+    void animateVerificationReveal();
+
     Ui::LoginWindow *ui;
     UserService m_userService;
     QTimer *m_countdownTimer;
 
     QString m_currentVerificationCode;
     int m_remainingSeconds;
+
+    QGraphicsOpacityEffect *m_verificationOpacityEffect;
 };
 
 #endif // LOGINWINDOW_H

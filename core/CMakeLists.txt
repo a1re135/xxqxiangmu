@@ -9,6 +9,9 @@ add_library(ncs_core STATIC
 
     service/userservice.cpp
     service/userservice.h
+
+    service/adminauthservice.cpp
+    service/adminauthservice.h
 )
 
 target_link_libraries(ncs_core
