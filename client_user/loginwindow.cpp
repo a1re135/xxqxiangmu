@@ -1,4 +1,5 @@
 #include "loginwindow.h"
+
 #include "./ui_loginwindow.h"
 
 #include <QRandomGenerator>
@@ -13,10 +14,10 @@ LoginWindow::LoginWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
+    // Keep the login screen exactly 420 x 760, matching the requested design.
     setFixedSize(420, 760);
 
     m_countdownTimer->setInterval(1000);
-
     ui->statusLabel->clear();
     ui->verificationInfoLabel->clear();
     ui->countdownLabel->clear();
@@ -49,6 +50,31 @@ LoginWindow::LoginWindow(QWidget *parent)
         this,
         &LoginWindow::onLoginClicked
     );
+
+    // Small convenience from the reference design: clear the phone number.
+    connect(
+        ui->clearPhoneButton,
+        &QPushButton::clicked,
+        this,
+        [this]() {
+            ui->phoneLineEdit->clear();
+            ui->phoneLineEdit->setFocus();
+            resetVerificationState();
+            ui->statusLabel->clear();
+        }
+    );
+
+    connect(
+        ui->phoneLineEdit,
+        &QLineEdit::textChanged,
+        this,
+        [this]() {
+            if (!m_currentVerificationCode.isEmpty()) {
+                resetVerificationState();
+                setStatusMessage(QStringLiteral("手机号已更改，请重新获取验证码"), false);
+            }
+        }
+    );
 }
 
 LoginWindow::~LoginWindow()
@@ -59,7 +85,6 @@ LoginWindow::~LoginWindow()
 bool LoginWindow::validatePhone(QString &phone)
 {
     phone = ui->phoneLineEdit->text().trimmed();
-
     const QRegularExpression regex(QStringLiteral("^1[0-9]{10}$"));
 
     if (!regex.match(phone).hasMatch()) {
@@ -74,7 +99,6 @@ bool LoginWindow::validatePhone(QString &phone)
 void LoginWindow::setStatusMessage(const QString &message, bool error)
 {
     ui->statusLabel->setText(message);
-
     ui->statusLabel->setProperty("error", error);
     ui->statusLabel->style()->unpolish(ui->statusLabel);
     ui->statusLabel->style()->polish(ui->statusLabel);
@@ -103,31 +127,26 @@ void LoginWindow::onGetCodeClicked()
 
     Q_UNUSED(phone);
 
-    // Six-digit simulated SMS code.
     m_currentVerificationCode = QString::number(
         QRandomGenerator::global()->bounded(100000, 1000000)
     );
 
     ui->verificationInfoLabel->setText(
-        QStringLiteral("模拟验证码  ·  ") + m_currentVerificationCode
+        QStringLiteral("模拟验证码: ") + m_currentVerificationCode
     );
 
     setStatusMessage(
-        QStringLiteral("验证码已发送，已在界面显示（模拟）"),
+        QStringLiteral("验证码已生成，请在60秒内输入"),
         false
     );
 
     m_remainingSeconds = 60;
-
     ui->getCodeButton->setEnabled(false);
-    ui->getCodeButton->setText(QStringLiteral("重新获取"));
-
     ui->countdownLabel->setText(
-        QStringLiteral("验证码有效期  %1 秒").arg(m_remainingSeconds)
+        QStringLiteral("有效期 %1 秒").arg(m_remainingSeconds)
     );
 
     m_countdownTimer->start();
-
     ui->verificationCodeLineEdit->clear();
     ui->verificationCodeLineEdit->setFocus();
 }
@@ -138,19 +157,15 @@ void LoginWindow::updateCountdown()
 
     if (m_remainingSeconds <= 0) {
         m_countdownTimer->stop();
-
         ui->getCodeButton->setEnabled(true);
         ui->getCodeButton->setText(QStringLiteral("重新获取"));
-        ui->countdownLabel->setText(
-            QStringLiteral("验证码已过期，请重新获取")
-        );
-
+        ui->countdownLabel->setText(QStringLiteral("验证码已过期"));
+        ui->verificationInfoLabel->clear();
         m_currentVerificationCode.clear();
         return;
     }
-
     ui->countdownLabel->setText(
-        QStringLiteral("验证码有效期  %1 秒").arg(m_remainingSeconds)
+        QStringLiteral("有效期 %1 秒").arg(m_remainingSeconds)
     );
 }
 
@@ -160,6 +175,11 @@ void LoginWindow::onLoginClicked()
 
     // BR-01: validate before touching the database.
     if (!validatePhone(phone)) {
+        return;
+    }
+
+    if (!ui->userAgreementCheckBox->isChecked()) {
+        setStatusMessage(QStringLiteral("请先阅读并同意用户服务协议与隐私政策"), true);
         return;
     }
 
@@ -194,8 +214,6 @@ void LoginWindow::onLoginClicked()
     }
 
     resetVerificationState();
-
     emit loginSucceeded(userInfo);
-
     hide();
 }
