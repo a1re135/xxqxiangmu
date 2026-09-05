@@ -13,3 +13,12 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+void MainWindow::setCurrentUser(const UserInfo &user)
+{
+    m_currentUser = user;
+
+    setWindowTitle(
+        "充电用户端 - " +
+        m_currentUser.nickname
+    );
+}

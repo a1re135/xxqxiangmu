@@ -1,0 +1,617 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>LoginWindow</class>
+ <widget class="QMainWindow" name="LoginWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>420</width>
+    <height>760</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>420</width>
+    <height>760</height>
+   </size>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>420</width>
+    <height>760</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>充电用户端</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">
+QMainWindow {
+    background-color: #07111F;
+    color: #F4F8FC;
+}
+
+QWidget#centralwidget {
+    background-color: #07111F;
+}
+
+QLabel {
+    color: #AFC1D5;
+    font-family: "Noto Sans CJK SC", "Microsoft YaHei", "PingFang SC", sans-serif;
+}
+
+QLabel#brandMark {
+    background-color: #11314D;
+    color: #35D7FF;
+    border: 1px solid #1C5279;
+    border-radius: 22px;
+    font-size: 24px;
+    font-weight: 800;
+}
+
+QLabel#brandName {
+    color: #F6FBFF;
+    font-size: 20px;
+    font-weight: 800;
+}
+
+QLabel#brandCaption {
+    color: #6F849B;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+}
+
+QLabel#headline {
+    color: #F8FBFF;
+    font-size: 28px;
+    font-weight: 800;
+}
+
+QLabel#subheadline {
+    color: #8297AC;
+    font-size: 13px;
+}
+
+QLabel#sectionLabel {
+    color: #B8C8D8;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+QLabel#verificationInfoLabel {
+    background-color: #0D2437;
+    border: 1px solid #174B68;
+    border-radius: 11px;
+    color: #35D7FF;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 9px 12px;
+}
+
+QLabel#countdownLabel {
+    color: #70869D;
+    font-size: 11px;
+}
+
+QLabel#statusLabel {
+    color: #70869D;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 0px;
+}
+
+QLabel#statusLabel[error="true"] {
+    color: #FF7F90;
+}
+
+QLabel#statusLabel[error="false"] {
+    color: #55E0A8;
+}
+
+QLabel#tipLabel {
+    color: #5F738A;
+    font-size: 11px;
+    line-height: 150%;
+}
+
+QLineEdit {
+    background-color: #0D1B2B;
+    color: #F5F9FD;
+    border: 1px solid #1B344A;
+    border-radius: 12px;
+    padding: 0px 14px;
+    selection-background-color: #1D8FB8;
+    selection-color: #FFFFFF;
+    font-size: 14px;
+}
+
+QLineEdit:hover {
+    border-color: #2A506C;
+}
+
+QLineEdit:focus {
+    background-color: #0E2032;
+    border: 1px solid #2EC9F5;
+}
+
+QLineEdit::placeholder {
+    color: #587088;
+}
+
+QPushButton {
+    background-color: #11263A;
+    color: #DDEAF5;
+    border: 1px solid #23445D;
+    border-radius: 11px;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 0px 12px;
+}
+
+QPushButton:hover {
+    background-color: #17344C;
+    border-color: #2F607F;
+}
+
+QPushButton:pressed {
+    background-color: #0D2031;
+}
+
+QPushButton:disabled {
+    background-color: #0D1927;
+    color: #52687D;
+    border-color: #15293B;
+}
+
+QPushButton#loginButton {
+    background-color: #18B9E8;
+    color: #04101A;
+    border: none;
+    border-radius: 13px;
+    font-size: 15px;
+    font-weight: 800;
+}
+
+QPushButton#loginButton:hover {
+    background-color: #35C9F1;
+}
+
+QPushButton#loginButton:pressed {
+    background-color: #12A2CC;
+}
+
+QFrame#loginCard {
+    background-color: #0A1727;
+    border: 1px solid #152D43;
+    border-radius: 20px;
+}
+
+QFrame#softDivider {
+    background-color: #142C42;
+    min-height: 1px;
+    max-height: 1px;
+}
+
+QLabel#secureBadge {
+    background-color: #0B201C;
+    color: #53DFA9;
+    border: 1px solid #164F42;
+    border-radius: 9px;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 4px 8px;
+}
+   </string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="rootLayout">
+    <property name="leftMargin">
+     <number>26</number>
+    </property>
+    <property name="topMargin">
+     <number>24</number>
+    </property>
+    <property name="rightMargin">
+     <number>26</number>
+    </property>
+    <property name="bottomMargin">
+     <number>20</number>
+    </property>
+    <property name="spacing">
+     <number>0</number>
+    </property>
+
+    <item>
+     <layout class="QHBoxLayout" name="brandRow">
+      <property name="spacing">
+       <number>11</number>
+      </property>
+      <item>
+       <widget class="QLabel" name="brandMark">
+        <property name="minimumSize">
+         <size>
+          <width>44</width>
+          <height>44</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>44</width>
+          <height>44</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>⚡</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <layout class="QVBoxLayout" name="brandTextLayout">
+        <property name="spacing">
+         <number>1</number>
+        </property>
+        <item>
+         <widget class="QLabel" name="brandName">
+          <property name="text">
+           <string>NCS Charge</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="brandCaption">
+          <property name="text">
+           <string>SMART CHARGING PLATFORM</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <spacer name="brandSpacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QLabel" name="secureBadge">
+        <property name="text">
+         <string>● 安全连接</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+
+    <item>
+     <spacer name="headerSpacer">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>20</width>
+        <height>42</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+
+    <item>
+     <widget class="QLabel" name="headline">
+      <property name="text">
+       <string>欢迎回来</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignLeft|Qt::AlignVCenter</set>
+      </property>
+     </widget>
+    </item>
+
+    <item>
+     <widget class="QLabel" name="subheadline">
+      <property name="text">
+       <string>手机号登录，首次使用将自动创建账户</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignLeft|Qt::AlignVCenter</set>
+      </property>
+     </widget>
+    </item>
+
+    <item>
+     <spacer name="headlineSpacer">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>20</width>
+        <height>24</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+
+    <item>
+     <widget class="QFrame" name="loginCard">
+      <property name="frameShape">
+       <enum>QFrame::NoFrame</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Raised</enum>
+      </property>
+      <layout class="QVBoxLayout" name="cardLayout">
+       <property name="leftMargin">
+        <number>20</number>
+       </property>
+       <property name="topMargin">
+        <number>20</number>
+       </property>
+       <property name="rightMargin">
+        <number>20</number>
+       </property>
+       <property name="bottomMargin">
+        <number>20</number>
+       </property>
+       <property name="spacing">
+        <number>10</number>
+       </property>
+
+       <item>
+        <widget class="QLabel" name="sectionLabel">
+         <property name="text">
+          <string>手机号码</string>
+         </property>
+        </widget>
+       </item>
+
+       <item>
+        <widget class="QLineEdit" name="phoneLineEdit">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>48</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>48</height>
+          </size>
+         </property>
+         <property name="placeholderText">
+          <string>请输入11位手机号</string>
+         </property>
+         <property name="maxLength">
+          <number>11</number>
+         </property>
+        </widget>
+       </item>
+
+       <item>
+        <spacer name="fieldSpacer1">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>6</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+
+       <item>
+        <widget class="QLabel" name="verificationSectionLabel">
+         <property name="text">
+          <string>短信验证码</string>
+         </property>
+        </widget>
+       </item>
+
+       <item>
+        <layout class="QHBoxLayout" name="verificationInputLayout">
+         <property name="spacing">
+          <number>8</number>
+         </property>
+         <item>
+          <widget class="QLineEdit" name="verificationCodeLineEdit">
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>48</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>16777215</width>
+             <height>48</height>
+            </size>
+           </property>
+           <property name="placeholderText">
+            <string>输入6位验证码</string>
+           </property>
+           <property name="maxLength">
+            <number>6</number>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="getCodeButton">
+           <property name="minimumSize">
+            <size>
+             <width>108</width>
+             <height>48</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>108</width>
+             <height>48</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>获取验证码</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+
+       <item>
+        <widget class="QLabel" name="verificationInfoLabel">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>36</height>
+          </size>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+
+       <item>
+        <widget class="QLabel" name="countdownLabel">
+         <property name="text">
+          <string/>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+
+       <item>
+        <spacer name="fieldSpacer2">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>4</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+
+       <item>
+        <widget class="QLabel" name="statusLabel">
+         <property name="text">
+          <string/>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+
+       <item>
+        <widget class="QPushButton" name="loginButton">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>52</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>52</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>登录 / 注册</string>
+         </property>
+        </widget>
+       </item>
+
+       <item>
+        <spacer name="cardBottomSpacer">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>1</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+
+       <item>
+        <widget class="QLabel" name="tipLabel">
+         <property name="text">
+          <string>新用户无需单独注册。登录成功后将自动创建账户，默认昵称为“用户 + 手机号后4位”。</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+
+    <item>
+     <spacer name="bottomSpacer">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>20</width>
+        <height>34</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+
+    <item>
+     <widget class="QLabel" name="footerLabel">
+      <property name="text">
+       <string>NCS · 东软电动汽车充电桩应用管理平台</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">color: #3F566D; font-size: 10px;</string>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

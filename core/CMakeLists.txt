@@ -3,6 +3,12 @@ find_package(Qt6 REQUIRED COMPONENTS Core Sql)
 add_library(ncs_core STATIC
     database/databasemanager.cpp
     database/databasemanager.h
+
+    database/user_repository.cpp
+    database/user_repository.h
+
+    service/userservice.cpp
+    service/userservice.h
 )
 
 target_link_libraries(ncs_core
