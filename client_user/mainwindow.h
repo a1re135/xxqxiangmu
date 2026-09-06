@@ -2,14 +2,13 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-
 #include "service/userservice.h"
 
 QT_BEGIN_NAMESPACE
-namespace Ui {
-class MainWindow;
-}
+namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
+
+class QLabel;
 
 class MainWindow : public QMainWindow
 {
@@ -21,10 +20,16 @@ public:
 
     void setCurrentUser(const UserInfo &user);
 
+signals:
+    void personalCenterRequested();
+    void logoutRequested();
+    void stationListRequested();
+
 private:
     Ui::MainWindow *ui;
-
     UserInfo m_currentUser;
+    QLabel *m_welcomeLabel;
+    QLabel *m_balanceLabel;
 };
 
 #endif // MAINWINDOW_H

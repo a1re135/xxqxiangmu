@@ -15,15 +15,25 @@ find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets REQUIRED)
 find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Widgets REQUIRED)
 
 set(PROJECT_SOURCES
-        main.cpp
+    main.cpp
 
-        mainwindow.cpp
-        mainwindow.h
-        mainwindow.ui
+    mainwindow.cpp
+    mainwindow.h
+    mainwindow.ui
 
-        loginwindow.cpp
-        loginwindow.h
-        loginwindow.ui
+    loginwindow.cpp
+    loginwindow.h
+    loginwindow.ui
+
+    ui/station_list_page.cpp
+    ui/station_list_page.h
+
+    ui/station_card_widget.cpp
+    ui/station_card_widget.h
+
+    personalhomepage.cpp
+    personalhomepage.h
+    personalhomepage.ui
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
@@ -31,17 +41,11 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
     )
-# Define target properties for Android with Qt 6 as:
-#    set_property(TARGET client_user APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
-#                 ${CMAKE_CURRENT_SOURCE_DIR}/android)
-# For more information, see https://doc.qt.io/qt-6/qt-add-executable.html#target-creation
 else()
     if(ANDROID)
         add_library(client_user SHARED
             ${PROJECT_SOURCES}
         )
-# Define properties for Android with Qt 5 after find_package() calls as:
-#    set(ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/android")
     else()
         add_executable(client_user
             ${PROJECT_SOURCES}
@@ -49,7 +53,11 @@ else()
     endif()
 endif()
 
-target_link_libraries(client_user PRIVATE Qt${QT_VERSION_MAJOR}::Widgets ncs_core)
+target_link_libraries(client_user
+    PRIVATE
+    Qt${QT_VERSION_MAJOR}::Widgets
+    ncs_core
+)
 
 set_target_properties(client_user PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER my.example.com

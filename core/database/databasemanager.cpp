@@ -702,6 +702,11 @@ bool DatabaseManager::rollbackTransaction()
     return true;
 }
 
+QSqlDatabase DatabaseManager::connection() const
+{
+    return m_database;
+}
+
 bool DatabaseManager::initialize()
 {
     if (!openDatabase()) {

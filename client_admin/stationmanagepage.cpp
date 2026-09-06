@@ -224,7 +224,7 @@ void MainWindow::refreshStationManagement(int preferredStationId)
 {
     if (!m_stationTable || !m_stationChargerTable) return;
 
-    QList<StationService::StationRecord> stations;
+    QList<AdminStationService::StationRecord> stations;
     QString errorMessage;
     if (!m_stationService.loadStations(stations, errorMessage)) {
         QMessageBox::warning(this, QStringLiteral("充电站管理"), errorMessage);
@@ -285,7 +285,7 @@ void MainWindow::stationSelectionChanged()
     m_editStationButton->setEnabled(true); m_deleteStationButton->setEnabled(true);
     m_stationSummaryLabel->setText(QStringLiteral("%1 · %2 个电桩").arg(station.name).arg(station.totalChargers));
 
-    QList<StationService::ChargerDetail> chargers;
+    QList<AdminStationService::ChargerDetail> chargers;
     QString errorMessage;
     if (!m_stationService.loadChargersForStation(station.id, chargers, errorMessage)) {
         QMessageBox::warning(this, QStringLiteral("站内电桩"), errorMessage);
