@@ -158,7 +158,6 @@ void LoginWindow::onLoginClicked()
 {
     QString phone;
 
-    // BR-01: validate before touching the database.
     if (!validatePhone(phone)) {
         return;
     }
@@ -180,22 +179,26 @@ void LoginWindow::onLoginClicked()
     UserInfo userInfo;
     QString errorMessage;
 
-    const bool success = m_userService.loginOrRegister(
-        phone,
-        verificationCode,
-        m_currentVerificationCode,
-        userInfo,
-        errorMessage
-    );
-
-    if (!success) {
+    if (!m_userService.loginOrRegister(
+            phone,
+            verificationCode,
+            m_currentVerificationCode,
+            userInfo,
+            errorMessage)) {
         setStatusMessage(errorMessage, true);
         return;
     }
 
     resetVerificationState();
+    setStatusMessage(QStringLiteral("登录成功"), false);
 
+    // FIX: LoginWindow 只负责登录并发出信号，不再自己创建 PersonalHomePage。
+    // 窗口切换统一交给 main.cpp 管理，避免登录后同时出现 MainWindow 和个人主页两套流程。
     emit loginSucceeded(userInfo);
-
-    hide();
 }
+
+UserService &LoginWindow::userService()
+{
+    return m_userService;
+}
+
