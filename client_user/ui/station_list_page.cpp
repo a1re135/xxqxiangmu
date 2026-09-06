@@ -88,9 +88,26 @@ StationListPage::StationListPage(core::StationService *service, QWidget *parent)
     m_scrollArea->setFrameShape(QFrame::NoFrame);
     m_scrollArea->setWidget(m_cardsContainer);
 
+    auto *backBtn = new QPushButton(QStringLiteral("← 返回首页"), this);
+    backBtn->setObjectName(QStringLiteral("backBtn"));
+    backBtn->setCursor(Qt::PointingHandCursor);
+    backBtn->setMinimumHeight(36);
+
+    connect(
+        backBtn,
+        &QPushButton::clicked,
+        this,
+        [this]() {
+            emit backToHomeRequested();
+        }
+    );
+
     auto *pageLayout = new QVBoxLayout(this);
+
     pageLayout->setContentsMargins(12, 12, 12, 8);
-    pageLayout->setSpacing(6);
+    pageLayout->setSpacing(8);
+
+    pageLayout->addWidget(backBtn, 0, Qt::AlignLeft);
     pageLayout->addLayout(locateBar);
     pageLayout->addLayout(infoBar);
     pageLayout->addWidget(m_toastLabel);

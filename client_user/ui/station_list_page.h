@@ -32,6 +32,7 @@ public:
     void refresh();
 
 signals:
+    void backToHomeRequested();
     void stationClicked(const core::StationListItem &item);
 
 protected:

@@ -23,6 +23,7 @@ public:
 signals:
     void personalCenterRequested();
     void logoutRequested();
+    void stationListRequested();
 
 private:
     Ui::MainWindow *ui;

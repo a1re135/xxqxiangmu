@@ -5,7 +5,6 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
-#include <QMessageBox>
 #include <QWidget>
 
 MainWindow::MainWindow(QWidget *parent)
@@ -45,10 +44,12 @@ MainWindow::MainWindow(QWidget *parent)
         root->addWidget(button);
     }
 
-    connect(stationBtn, &QPushButton::clicked, this, [this]() {
-        QMessageBox::information(this, QStringLiteral("附近充电站"),
-                                 QStringLiteral("充电站列表模块还未完成，目前首页跳转已经可以正常使用。"));
-    });
+    connect(
+        stationBtn,
+        &QPushButton::clicked,
+        this,
+        &MainWindow::stationListRequested
+    );
     connect(profileBtn, &QPushButton::clicked, this, &MainWindow::personalCenterRequested);
     connect(logoutBtn, &QPushButton::clicked, this, &MainWindow::logoutRequested);
 
