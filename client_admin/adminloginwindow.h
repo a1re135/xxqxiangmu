@@ -20,8 +20,12 @@ public:
     explicit AdminLoginWindow(QWidget *parent = nullptr);
     ~AdminLoginWindow();
 
+    void resetForLogout();
+
 signals:
-    void loginSucceeded(const AdminAuthService::AdminInfo &admin);
+    void loginSucceeded(
+        const AdminAuthService::AdminInfo &admin
+    );
 
 private slots:
     void onLoginClicked();
@@ -36,21 +40,33 @@ private:
         Locked
     };
 
-    void setStatusMessage(const QString &message, bool error = true);
+    void setStatusMessage(
+        const QString &message,
+        bool error = true
+    );
+
     void setLoginEnabled(bool enabled);
+
     void enterLockout();
     void leaveLockout();
+
     void clearPasswordFeedback();
-    bool validateInput(QString &username, QString &password);
+
+    bool validateInput(
+        QString &username,
+        QString &password
+    );
 
     Ui::AdminLoginWindow *ui;
 
     AdminAuthService m_authService;
+
     QTimer *m_lockoutTimer;
 
     int m_failedAttempts;
     int m_lockoutRemainingSeconds;
+
     LoginState m_state;
 };
 
-#endif // ADMINLOGINWINDOW_H
+#endif

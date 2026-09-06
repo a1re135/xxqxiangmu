@@ -10,552 +10,915 @@
     <height>800</height>
    </rect>
   </property>
-  <property name="sizePolicy">
-   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-    <horstretch>0</horstretch>
-    <verstretch>0</verstretch>
-   </sizepolicy>
-  </property>
   <property name="minimumSize">
    <size>
     <width>1280</width>
     <height>800</height>
    </size>
   </property>
-  <property name="maximumSize">
-   <size>
-    <width>16777215</width>
-    <height>16777215</height>
-   </size>
-  </property>
   <property name="windowTitle">
-   <string>NCS Charge · 管理员登录</string>
+   <string>NCS 智慧充 · 管理员登录</string>
   </property>
   <property name="styleSheet">
    <string notr="true">
 QMainWindow {
-    background: qlineargradient(x1:0, y1:0, x2:0.2, y2:1,
-        stop:0 #1B1036, stop:0.45 #120A28, stop:1 #0A0616);
-    color: #F3EEFF;
+    background-color: #0B1326;
 }
 QWidget#centralwidget {
-    background: transparent;
+    background-color: #0B1326;
+    color: #DCE6F7;
 }
+
+QFrame#heroPanel {
+    background-color: #0B1326;
+    border: none;
+}
+
+QFrame#adminPanel {
+    background-color: #101A2D;
+    border: none;
+}
+
+QFrame#brandCard {
+    background-color: #222A3D;
+    border: 1px solid #3B4A45;
+    border-radius: 16px;
+}
+
+QFrame#brandIconBox {
+    background-color: #10B981;
+    border: 1px solid #52DFA6;
+    border-radius: 13px;
+}
+
 QLabel {
-    color: #A79BD1;
     font-family: &quot;Noto Sans CJK SC&quot;, &quot;Microsoft YaHei&quot;, &quot;PingFang SC&quot;, sans-serif;
 }
-QLabel#brandMark {
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-        stop:0 #A855F7, stop:0.55 #EC4899, stop:1 #F97316);
-    color: #1A0B2E;
-    border: 1px solid #C084FC;
-    border-radius: 23px;
+
+QLabel#brandIcon {
+    color: #043728;
+    font-size: 24px;
+    font-weight: 900;
+}
+
+QLabel#brandName {
+    color: #DCE6F7;
+    font-size: 20px;
+    font-weight: 850;
+}
+
+QLabel#brandBadge {
+    background-color: #103743;
+    color: #54D9F2;
+    border: 1px solid #226073;
+    border-radius: 4px;
+    padding: 2px 7px;
+    font-size: 9px;
+    font-weight: 800;
+}
+
+QLabel#versionBadge {
+    background-color: #12372D;
+    color: #52DFA6;
+    border: 1px solid #245D4A;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 9px;
+    font-weight: 800;
+}
+
+QLabel#brandCaption {
+    color: #B7C7C0;
+    font-size: 10px;
+}
+
+QLabel#adminBadge {
+    background-color: #0F3028;
+    color: #52DFA6;
+    border: 1px solid #21604C;
+    border-radius: 9px;
+    padding: 4px 8px;
+    font-size: 9px;
+    font-weight: 800;
+}
+
+QLabel#welcomeBolt {
+    color: #43DFA9;
     font-size: 22px;
     font-weight: 900;
 }
-QLabel#brandName {
-    color: #FBF7FF;
-    font-size: 20px;
+
+QLabel#heroHeadline {
+    color: #E7EEF9;
+    font-size: 31px;
     font-weight: 900;
 }
-QLabel#brandCaption {
-    color: #8B7DB8;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 1px;
-}
-QLabel#adminBadge {
-    background-color: #0F2A22;
-    color: #4ADE9E;
-    border: 1px solid #1F6B4E;
-    border-radius: 9px;
-    font-size: 10px;
-    font-weight: 700;
-    padding: 5px 8px;
-}
-QLabel#headline {
-    color: #FBF7FF;
-    font-size: 29px;
-    font-weight: 900;
-    letter-spacing: 0.5px;
-}
-QLabel#subheadline {
-    color: #9A8DC4;
+
+QLabel#heroSubtext {
+    color: #A7B7C1;
     font-size: 13px;
 }
-QLabel#sectionLabel,
-QLabel#passwordSectionLabel {
-    color: #C7B9EC;
+
+QLabel#heroHint {
+    color: #667986;
+    font-size: 10px;
+}
+
+QFrame#featureCard {
+    background-color: #141F31;
+    border: 1px solid #273B49;
+    border-radius: 12px;
+}
+
+QLabel#featureIcon1,
+QLabel#featureIcon2,
+QLabel#featureIcon3 {
+    color: #4ADFB0;
+    font-size: 15px;
+    font-weight: 900;
+}
+
+QLabel#featureTitle1,
+QLabel#featureTitle2,
+QLabel#featureTitle3 {
+    color: #DDE7EF;
+    font-size: 10px;
+    font-weight: 800;
+}
+
+QLabel#featureText1,
+QLabel#featureText2,
+QLabel#featureText3 {
+    color: #70838F;
+    font-size: 9px;
+}
+
+QLabel#footerLabel {
+    color: #536873;
+    font-size: 9px;
+}
+
+QFrame#loginCard {
+    background-color: #182238;
+    border: 1px solid #324256;
+    border-radius: 16px;
+}
+
+QLabel#loginSectionIcon {
+    color: #50E0AD;
+    font-size: 16px;
+    font-weight: 900;
+}
+
+QLabel#loginSectionTitle {
+    color: #E7EEF9;
+    font-size: 15px;
+    font-weight: 850;
+}
+
+QLabel#securityBadge {
+    background-color: #103127;
+    color: #4FE0AB;
+    border: 1px solid #22614B;
+    border-radius: 9px;
+    padding: 4px 8px;
+    font-size: 9px;
+    font-weight: 800;
+}
+
+QLabel#loginSub {
+    color: #9DAEBA;
+    font-size: 10px;
+}
+
+QLabel#fieldLabelUsername,
+QLabel#fieldLabelPassword {
+    color: #B9C8D0;
+    font-size: 10px;
+    font-weight: 800;
+}
+
+QLabel#fieldHint {
+    color: #70828C;
+    font-size: 9px;
+}
+
+QFrame#usernameInputFrame,
+QFrame#passwordInputFrame {
+    background-color: #081221;
+    border: 1px solid #34495A;
+    border-radius: 9px;
+}
+
+QFrame#usernameInputFrame:focus-within,
+QFrame#passwordInputFrame:focus-within {
+    border: 1px solid #10B981;
+}
+
+QLabel#usernameInputIcon,
+QLabel#passwordInputIcon {
+    color: #738690;
     font-size: 12px;
     font-weight: 800;
 }
-QFrame#loginCard {
-    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-        stop:0 #211640, stop:1 #150C2C);
-    border: 1px solid #3D2C68;
-    border-radius: 22px;
+
+QLineEdit#usernameLineEdit,
+QLineEdit#passwordLineEdit {
+    background-color: transparent;
+    border: none;
+    color: #E7EEF9;
+    padding: 0px 2px;
+    font-size: 12px;
 }
-QLineEdit {
-    background-color: #170F2E;
-    color: #F7F2FF;
-    border: 1px solid #3A2C63;
-    border-radius: 12px;
-    padding: 0px 14px;
-    selection-background-color: #9333EA;
-    selection-color: #FFFFFF;
-    font-size: 14px;
+
+QLineEdit#usernameLineEdit::placeholder,
+QLineEdit#passwordLineEdit::placeholder {
+    color: #5F7280;
 }
-QLineEdit:hover {
-    border-color: #5B3FA0;
-}
-QLineEdit:focus {
-    background-color: #1C1238;
-    border: 2px solid #C084FC;
-    padding: 0px 13px;
-}
-QLineEdit:disabled {
-    color: #5C4E85;
-    background-color: #180F2C;
-}
-QLineEdit::placeholder {
-    color: #6E5F98;
-}
-QPushButton {
-    background-color: #201640;
-    color: #E9E1FF;
-    border: 1px solid #40316E;
-    border-radius: 11px;
-    font-size: 11px;
-    font-weight: 800;
-    padding: 0px 12px;
-}
-QPushButton:hover {
-    background-color: #2C1E54;
-    border-color: #5B3FA0;
-}
-QPushButton:pressed {
-    background-color: #170F2E;
-}
-QPushButton:disabled {
-    background-color: #180F2C;
-    color: #5C4E85;
-    border-color: #241A44;
-}
-QPushButton#togglePasswordButton {
+
+QPushButton#clearUsernameButton {
     background: transparent;
     border: none;
-    color: #76669F;
+    color: #71818B;
+    font-size: 13px;
+}
+
+QPushButton#clearUsernameButton:hover {
+    color: #DDE7EF;
+}
+
+QPushButton#togglePasswordButton {
+    background-color: #111C2D;
+    border: 1px solid #3A4D5D;
+    border-radius: 9px;
+    color: #58DDAF;
+    font-size: 9px;
+    font-weight: 800;
+}
+
+QPushButton#togglePasswordButton:hover {
+    background-color: #142B27;
+    border-color: #50E0AD;
+}
+
+QLabel#passwordHintLabel {
+    color: #6D7F8A;
+    font-size: 9px;
+}
+
+QLabel#statusLabel {
+    color: #738691;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+QLabel#statusLabel[error=&quot;true&quot;] {
+    color: #FF8D86;
+}
+
+QLabel#statusLabel[error=&quot;false&quot;] {
+    color: #4FE0AB;
+}
+
+QLabel#lockoutLabel {
+    color: #E7B267;
+    font-size: 9px;
+    font-weight: 800;
+}
+
+QPushButton#loginButton {
+    background-color: #10B981;
+    color: #031B12;
+    border: none;
+    border-radius: 11px;
+    font-size: 13px;
+    font-weight: 900;
+}
+
+QPushButton#loginButton:hover {
+    background-color: #1BD398;
+}
+
+QPushButton#loginButton:pressed {
+    background-color: #0A9A6A;
+}
+
+QPushButton#loginButton:disabled {
+    background-color: #155A45;
+    color: #718B83;
+}
+
+QFrame#securityNoticeFrame {
+    background-color: #121D2E;
+    border: 1px solid #244558;
+    border-radius: 8px;
+}
+
+QLabel#securityIcon {
+    color: #55D9F2;
+    font-size: 10px;
+    font-weight: 900;
+}
+
+QLabel#securityNoticeLabel {
+    color: #8DA1AD;
+    font-size: 9px;
+}
+
+QLabel#attemptBadge {
+    background-color: #103127;
+    color: #4FE0AB;
+    border: 1px solid #21604C;
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-size: 8px;
+    font-weight: 900;
+}
+
+QLabel#securityNote {
+    color: #5C717D;
+    font-size: 8px;
+}
+
+QStatusBar {
+    background-color: #08111F;
+    color: #4E616D;
+    border-top: 1px solid #172A38;
+}
+   
+
+/* Enlarged admin-login typography and controls */
+QLabel#loginSectionTitle {
+    font-size: 18px;
+}
+QLabel#loginSub {
+    font-size: 12px;
+}
+QLabel#fieldLabelUsername,
+QLabel#fieldLabelPassword {
+    font-size: 12px;
+}
+QLabel#fieldHint {
     font-size: 10px;
 }
-QPushButton#togglePasswordButton:hover {
-    color: #D9B7FF;
-}
-QPushButton#loginButton {
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-        stop:0 #8B5CF6, stop:0.55 #EC4899, stop:1 #F97316);
-    color: #1A0B2E;
-    border: none;
-    border-radius: 14px;
-    font-size: 15px;
-    font-weight: 900;
-    letter-spacing: 0.5px;
-}
-QPushButton#loginButton:hover {
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-        stop:0 #A47BFA, stop:0.55 #F472B6, stop:1 #FB923C);
-}
-QPushButton#loginButton:pressed {
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-        stop:0 #7C3AED, stop:0.55 #DB2777, stop:1 #EA580C);
+QLineEdit#usernameLineEdit,
+QLineEdit#passwordLineEdit {
+    font-size: 14px;
 }
 QLabel#passwordHintLabel {
-    color: #776A9E;
     font-size: 10px;
 }
 QLabel#statusLabel {
-    color: #8577AD;
-    font-size: 12px;
-    font-weight: 700;
-}
-QLabel#statusLabel[error=&quot;true&quot;] {
-    color: #FB7185;
-}
-QLabel#statusLabel[error=&quot;false&quot;] {
-    color: #34D9A8;
+    font-size: 11px;
 }
 QLabel#lockoutLabel {
-    color: #E7A65C;
-    font-size: 11px;
-    font-weight: 700;
+    font-size: 10px;
+}
+QPushButton#togglePasswordButton {
+    font-size: 10px;
+}
+QPushButton#loginButton {
+    font-size: 15px;
+}
+QLabel#securityNoticeLabel {
+    font-size: 10px;
 }
 QLabel#securityNote {
-    color: #6D5F97;
+    font-size: 9px;
+}
+QLabel#attemptBadge {
+    font-size: 9px;
+}
+
+
+/* Global scale-up pass: make the desktop version feel substantial
+   while retaining the same client_user visual identity. */
+QLabel#brandIcon {
+    font-size: 29px;
+}
+QLabel#brandName {
+    font-size: 23px;
+}
+QLabel#brandCaption {
+    font-size: 12px;
+}
+QLabel#brandBadge,
+QLabel#versionBadge {
+    font-size: 10px;
+    padding: 3px 8px;
+}
+QLabel#adminBadge {
+    font-size: 10px;
+    padding: 5px 10px;
+}
+QLabel#heroHeadline {
+    font-size: 36px;
+}
+QLabel#heroSubtext {
+    font-size: 15px;
+}
+QLabel#heroHint {
+    font-size: 11px;
+}
+QLabel#featureIcon1,
+QLabel#featureIcon2,
+QLabel#featureIcon3 {
+    font-size: 17px;
+}
+QLabel#featureTitle1,
+QLabel#featureTitle2,
+QLabel#featureTitle3 {
+    font-size: 12px;
+}
+QLabel#featureText1,
+QLabel#featureText2,
+QLabel#featureText3 {
     font-size: 10px;
 }
+QLabel#loginSectionIcon {
+    font-size: 19px;
+}
+QLabel#loginSectionTitle {
+    font-size: 18px;
+}
+QLabel#securityBadge {
+    font-size: 10px;
+    padding: 5px 10px;
+}
+QLabel#loginSub {
+    font-size: 12px;
+}
+QLabel#fieldLabelUsername,
+QLabel#fieldLabelPassword {
+    font-size: 12px;
+}
+QLabel#fieldHint {
+    font-size: 10px;
+}
+QLabel#usernameInputIcon,
+QLabel#passwordInputIcon {
+    font-size: 14px;
+}
+QLineEdit#usernameLineEdit,
+QLineEdit#passwordLineEdit {
+    font-size: 15px;
+}
+QPushButton#togglePasswordButton {
+    font-size: 11px;
+}
+QLabel#passwordHintLabel {
+    font-size: 10px;
+}
+QLabel#statusLabel {
+    font-size: 12px;
+}
+QLabel#lockoutLabel {
+    font-size: 11px;
+}
+QPushButton#loginButton {
+    font-size: 16px;
+}
+QLabel#securityIcon {
+    font-size: 12px;
+}
+QLabel#securityNoticeLabel {
+    font-size: 10px;
+}
+QLabel#attemptBadge {
+    font-size: 9px;
+    padding: 2px 6px;
+}
+QLabel#securityNote {
+    font-size: 9px;
+}
+QLabel#heroFooter,
 QLabel#footerLabel {
-    color: #493C6B;
     font-size: 10px;
 }
-QFrame#softDivider {
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-        stop:0 rgba(124, 58, 237, 0),
-        stop:0.5 #7C3AED,
-        stop:1 rgba(124, 58, 237, 0));
-    min-height: 1px;
-    max-height: 1px;
-}
-   </string>
+</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="rootLayout">
+   <layout class="QHBoxLayout" name="rootLayout">
     <property name="spacing">
      <number>0</number>
     </property>
     <property name="leftMargin">
-     <number>30</number>
+     <number>0</number>
     </property>
     <property name="topMargin">
-     <number>24</number>
+     <number>0</number>
     </property>
     <property name="rightMargin">
-     <number>30</number>
+     <number>0</number>
     </property>
     <property name="bottomMargin">
-     <number>18</number>
+     <number>0</number>
     </property>
     <item>
-     <layout class="QHBoxLayout" name="brandLayout">
-      <property name="spacing">
-       <number>11</number>
-      </property>
-      <item>
-       <widget class="QLabel" name="brandMark">
-        <property name="minimumSize">
-         <size>
-          <width>46</width>
-          <height>46</height>
-         </size>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>46</width>
-          <height>46</height>
-         </size>
-        </property>
-        <property name="text">
-         <string>⚡</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignCenter</set>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <layout class="QVBoxLayout" name="brandTextLayout">
-        <property name="spacing">
-         <number>1</number>
-        </property>
-        <item>
-         <widget class="QLabel" name="brandName">
-          <property name="text">
-           <string>NCS Charge</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLabel" name="brandCaption">
-          <property name="text">
-           <string>SMART CHARGING PLATFORM</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </item>
-      <item>
-       <spacer name="brandSpacer">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>0</width>
-          <height>0</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item>
-       <widget class="QLabel" name="adminBadge">
-        <property name="text">
-         <string>● 管理员入口</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </item>
-    <item>
-     <spacer name="topSpacer">
-      <property name="orientation">
-       <enum>Qt::Vertical</enum>
-      </property>
-      <property name="sizeHint" stdset="0">
-       <size>
-        <width>20</width>
-        <height>42</height>
-       </size>
-      </property>
-     </spacer>
-    </item>
-    <item>
-     <widget class="QLabel" name="headline">
+     <widget class="QFrame" name="heroPanel">
       <property name="sizePolicy">
-       <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-        <horstretch>0</horstretch>
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <horstretch>6</horstretch>
         <verstretch>0</verstretch>
        </sizepolicy>
       </property>
-      <property name="text">
-       <string>欢迎回来</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QLabel" name="subheadline">
-      <property name="text">
-       <string>登录运营中心，管理电站与充电设备</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <spacer name="titleSpacer">
-      <property name="orientation">
-       <enum>Qt::Vertical</enum>
-      </property>
-      <property name="sizeHint" stdset="0">
-       <size>
-        <width>20</width>
-        <height>22</height>
-       </size>
-      </property>
-     </spacer>
-    </item>
-    <item>
-     <widget class="QFrame" name="loginCard">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Preferred" vsizetype="Ignored">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="frameShape">
-       <enum>QFrame::NoFrame</enum>
-      </property>
-      <layout class="QVBoxLayout" name="cardLayout">
+      <layout class="QVBoxLayout" name="heroLayout">
        <property name="spacing">
-        <number>9</number>
+        <number>0</number>
        </property>
        <property name="leftMargin">
-        <number>22</number>
+        <number>56</number>
        </property>
        <property name="topMargin">
-        <number>22</number>
+        <number>34</number>
        </property>
        <property name="rightMargin">
-        <number>22</number>
+        <number>46</number>
        </property>
        <property name="bottomMargin">
-        <number>22</number>
+        <number>30</number>
        </property>
        <item>
-        <widget class="QLabel" name="sectionLabel">
-         <property name="text">
-          <string>管理员账号</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLineEdit" name="usernameLineEdit">
+        <widget class="QFrame" name="brandCard">
          <property name="minimumSize">
           <size>
            <width>0</width>
-           <height>48</height>
+           <height>80</height>
           </size>
          </property>
-         <property name="placeholderText">
-          <string>请输入管理员账号</string>
+         <property name="maximumSize">
+          <size>
+           <width>760</width>
+           <height>80</height>
+          </size>
          </property>
-         <property name="clearButtonEnabled">
-          <bool>true</bool>
-         </property>
+         <layout class="QHBoxLayout" name="brandLayout">
+          <property name="spacing">
+           <number>11</number>
+          </property>
+          <property name="leftMargin">
+           <number>13</number>
+          </property>
+          <property name="topMargin">
+           <number>11</number>
+          </property>
+          <property name="rightMargin">
+           <number>13</number>
+          </property>
+          <property name="bottomMargin">
+           <number>11</number>
+          </property>
+          <item>
+           <widget class="QFrame" name="brandIconBox">
+            <property name="minimumSize">
+             <size>
+              <width>58</width>
+              <height>58</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>58</width>
+              <height>58</height>
+             </size>
+            </property>
+            <layout class="QVBoxLayout" name="brandIconLayout">
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <item>
+              <widget class="QLabel" name="brandIcon">
+               <property name="text">
+                <string>⚡</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignCenter</set>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <layout class="QVBoxLayout" name="brandTextLayout">
+            <property name="spacing">
+             <number>3</number>
+            </property>
+            <item>
+             <layout class="QHBoxLayout" name="brandNameRow">
+              <property name="spacing">
+               <number>6</number>
+              </property>
+              <item>
+               <widget class="QLabel" name="brandName">
+                <property name="text">
+                 <string>NCS 智慧充</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="brandBadge">
+                <property name="text">
+                 <string>NEUSOFT</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="versionBadge">
+                <property name="text">
+                 <string>v1.0</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="brandSpacer">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>0</width>
+                  <height>0</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <widget class="QLabel" name="brandCaption">
+              <property name="text">
+               <string>绿色出行 · 电能互联 · 官方管理端</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <spacer name="brandEndSpacer">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>0</width>
+              <height>0</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
         </widget>
        </item>
        <item>
-        <spacer name="space1">
+        <spacer name="heroTopStretch">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::Expanding</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
            <width>20</width>
-           <height>6</height>
+           <height>30</height>
           </size>
          </property>
         </spacer>
        </item>
        <item>
-        <widget class="QLabel" name="passwordSectionLabel">
+        <widget class="QLabel" name="heroHeadline">
          <property name="text">
-          <string>登录密码</string>
+          <string>欢迎回来！</string>
          </property>
         </widget>
        </item>
        <item>
-        <layout class="QHBoxLayout" name="passwordLayout">
+        <layout class="QVBoxLayout" name="heroCenterLayout">
          <property name="spacing">
-          <number>4</number>
+          <number>8</number>
          </property>
          <item>
-          <widget class="QLineEdit" name="passwordLineEdit">
-           <property name="minimumSize">
-            <size>
-             <width>0</width>
-             <height>48</height>
-            </size>
+          <layout class="QHBoxLayout" name="welcomeRow">
+           <property name="spacing">
+            <number>7</number>
            </property>
-           <property name="echoMode">
-            <enum>QLineEdit::Password</enum>
-           </property>
-           <property name="placeholderText">
-            <string>请输入管理员密码</string>
+           <item>
+            <widget class="QLabel" name="welcomeBolt">
+             <property name="text">
+              <string>ϟ</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <widget class="QLabel" name="heroSubtext">
+           <property name="text">
+            <string>登录后台，管理智慧充电与运营服务</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="togglePasswordButton">
+          <spacer name="heroTextGap">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeType">
+            <enum>QSizePolicy::Fixed</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>24</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QFrame" name="featureCard">
            <property name="minimumSize">
             <size>
-             <width>52</width>
-             <height>48</height>
+             <width>0</width>
+             <height>100</height>
             </size>
            </property>
            <property name="maximumSize">
             <size>
-             <width>52</width>
-             <height>48</height>
+             <width>860</width>
+             <height>100</height>
             </size>
            </property>
+           <layout class="QHBoxLayout" name="featureLayout">
+            <property name="spacing">
+             <number>0</number>
+            </property>
+            <property name="leftMargin">
+             <number>14</number>
+            </property>
+            <property name="topMargin">
+             <number>13</number>
+            </property>
+            <property name="rightMargin">
+             <number>14</number>
+            </property>
+            <property name="bottomMargin">
+             <number>13</number>
+            </property>
+            <item>
+             <layout class="QVBoxLayout" name="feature1Layout">
+              <property name="spacing">
+               <number>3</number>
+              </property>
+              <item>
+               <widget class="QLabel" name="featureIcon1">
+                <property name="text">
+                 <string>⚡</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="featureTitle1">
+                <property name="text">
+                 <string>实时监控</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="featureText1">
+                <property name="text">
+                 <string>掌握电桩运行状态</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <spacer name="featureMid1">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>0</width>
+                <height>0</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <layout class="QVBoxLayout" name="feature2Layout">
+              <property name="spacing">
+               <number>3</number>
+              </property>
+              <item>
+               <widget class="QLabel" name="featureIcon2">
+                <property name="text">
+                 <string>▣</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="featureTitle2">
+                <property name="text">
+                 <string>运营分析</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="featureText2">
+                <property name="text">
+                 <string>查看营收与订单趋势</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <spacer name="featureMid2">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>0</width>
+                <height>0</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <layout class="QVBoxLayout" name="feature3Layout">
+              <property name="spacing">
+               <number>3</number>
+              </property>
+              <item>
+               <widget class="QLabel" name="featureIcon3">
+                <property name="text">
+                 <string>◉</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="featureTitle3">
+                <property name="text">
+                 <string>智能预测</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="featureText3">
+                <property name="text">
+                 <string>辅助调度与决策</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="heroHint">
            <property name="text">
-            <string>显示</string>
+            <string>一个后台 · 电站、设备、用户与数据统一管理</string>
            </property>
           </widget>
          </item>
         </layout>
        </item>
        <item>
-        <widget class="QLabel" name="passwordHintLabel">
-         <property name="text">
-          <string>密码采用 SHA-256 + 随机盐保存</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <spacer name="space2">
+        <spacer name="heroBottomStretch">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::Expanding</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
            <width>20</width>
-           <height>8</height>
+           <height>30</height>
           </size>
          </property>
         </spacer>
        </item>
        <item>
-        <widget class="QLabel" name="statusLabel">
-         <property name="minimumSize">
-          <size>
-           <width>0</width>
-           <height>25</height>
-          </size>
+        <widget class="QLabel" name="heroFooter">
+         <property name="styleSheet">
+          <string notr="true">color:#536873;font-size:9px;</string>
          </property>
          <property name="text">
-          <string/>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-         <property name="wordWrap">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="lockoutLabel">
-         <property name="text">
-          <string/>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-         <property name="wordWrap">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <spacer name="space3">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>5</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item>
-        <widget class="QPushButton" name="loginButton">
-         <property name="minimumSize">
-          <size>
-           <width>0</width>
-           <height>52</height>
-          </size>
-         </property>
-         <property name="text">
-          <string>登 录</string>
-         </property>
-         <property name="default">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <spacer name="space4">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>5</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item>
-        <widget class="QLabel" name="securityNote">
-         <property name="text">
-          <string>安全提示：连续登录失败 5 次后，输入将锁定 30 秒。</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-         <property name="wordWrap">
-          <bool>true</bool>
+          <string>NCS · 东软电动汽车充电桩应用管理平台</string>
          </property>
         </widget>
        </item>
@@ -563,26 +926,651 @@ QFrame#softDivider {
      </widget>
     </item>
     <item>
-     <spacer name="bottomSpacer">
-      <property name="orientation">
-       <enum>Qt::Vertical</enum>
+     <widget class="QFrame" name="adminPanel">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <horstretch>5</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
       </property>
-      <property name="sizeHint" stdset="0">
-       <size>
-        <width>20</width>
-        <height>31</height>
-       </size>
-      </property>
-     </spacer>
-    </item>
-    <item>
-     <widget class="QLabel" name="footerLabel">
-      <property name="text">
-       <string>NCS · 东软电动汽车充电桩应用管理平台</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
+      <layout class="QVBoxLayout" name="adminPanelLayout">
+       <property name="spacing">
+        <number>0</number>
+       </property>
+       <property name="leftMargin">
+        <number>42</number>
+       </property>
+       <property name="topMargin">
+        <number>26</number>
+       </property>
+       <property name="rightMargin">
+        <number>42</number>
+       </property>
+       <property name="bottomMargin">
+        <number>20</number>
+       </property>
+       <item>
+        <layout class="QHBoxLayout" name="topBadgeRow">
+         <item>
+          <spacer name="topBadgeLeft">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>0</width>
+             <height>0</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QLabel" name="adminBadge">
+           <property name="text">
+            <string>● 管理员入口</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <spacer name="loginTopStretch">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::Expanding</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>35</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QFrame" name="loginCard">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>640</width>
+           <height>590</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>900</width>
+           <height>700</height>
+          </size>
+         </property>
+         <property name="frameShape">
+          <enum>QFrame::NoFrame</enum>
+         </property>
+         <layout class="QVBoxLayout" name="cardLayout">
+          <property name="spacing">
+           <number>0</number>
+          </property>
+          <property name="leftMargin">
+           <number>30</number>
+          </property>
+          <property name="topMargin">
+           <number>28</number>
+          </property>
+          <property name="rightMargin">
+           <number>30</number>
+          </property>
+          <property name="bottomMargin">
+           <number>28</number>
+          </property>
+          <item>
+           <layout class="QHBoxLayout" name="loginHeaderRow">
+            <property name="spacing">
+             <number>7</number>
+            </property>
+            <item>
+             <widget class="QLabel" name="loginSectionIcon">
+              <property name="text">
+               <string>▣</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="loginSectionTitle">
+              <property name="text">
+               <string>管理员账号登录</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="loginHeaderSpacer">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>0</width>
+                <height>0</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <widget class="QLabel" name="securityBadge">
+              <property name="text">
+               <string>● 安全验证</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <spacer name="headerGap">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeType">
+             <enum>QSizePolicy::Fixed</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>6</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QLabel" name="loginSub">
+            <property name="text">
+             <string>使用管理员账号与密码进入运营管理中心</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="subGap">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeType">
+             <enum>QSizePolicy::Fixed</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QLabel" name="fieldLabelUsername">
+            <property name="text">
+             <string>管理员账号</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="usernameGap">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeType">
+             <enum>QSizePolicy::Fixed</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>6</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QFrame" name="usernameInputFrame">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>56</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>56</height>
+             </size>
+            </property>
+            <layout class="QHBoxLayout" name="usernameFrameLayout">
+             <property name="spacing">
+              <number>7</number>
+             </property>
+             <property name="leftMargin">
+              <number>11</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>7</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <item>
+              <widget class="QLabel" name="usernameInputIcon">
+               <property name="text">
+                <string>▣</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="usernameLineEdit">
+               <property name="placeholderText">
+                <string>请输入管理员账号</string>
+               </property>
+               <property name="clearButtonEnabled">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <spacer name="usernamePasswordGap">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeType">
+             <enum>QSizePolicy::Fixed</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>14</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="passwordLabelRow">
+            <property name="spacing">
+             <number>6</number>
+            </property>
+            <item>
+             <widget class="QLabel" name="fieldLabelPassword">
+              <property name="text">
+               <string>登录密码</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="passwordLabelSpacer">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>0</width>
+                <height>0</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <widget class="QLabel" name="fieldHint">
+              <property name="text">
+               <string>SHA-256 + 加盐</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <spacer name="passwordLabelGap">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeType">
+             <enum>QSizePolicy::Fixed</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>6</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="passwordOuterLayout">
+            <property name="spacing">
+             <number>7</number>
+            </property>
+            <item>
+             <widget class="QFrame" name="passwordInputFrame">
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>56</height>
+               </size>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>16777215</width>
+                <height>56</height>
+               </size>
+              </property>
+              <layout class="QHBoxLayout" name="passwordFrameLayout">
+               <property name="spacing">
+                <number>7</number>
+               </property>
+               <property name="leftMargin">
+                <number>11</number>
+               </property>
+               <property name="topMargin">
+                <number>0</number>
+               </property>
+               <property name="rightMargin">
+                <number>7</number>
+               </property>
+               <property name="bottomMargin">
+                <number>0</number>
+               </property>
+               <item>
+                <widget class="QLabel" name="passwordInputIcon">
+                 <property name="text">
+                  <string>◆</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLineEdit" name="passwordLineEdit">
+                 <property name="echoMode">
+                  <enum>QLineEdit::Password</enum>
+                 </property>
+                 <property name="placeholderText">
+                  <string>请输入管理员密码</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="togglePasswordButton">
+              <property name="minimumSize">
+               <size>
+                <width>96</width>
+                <height>56</height>
+               </size>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>96</width>
+                <height>56</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>显示密码</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <spacer name="passwordHintGap">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeType">
+             <enum>QSizePolicy::Fixed</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>5</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QLabel" name="passwordHintLabel">
+            <property name="text">
+             <string>密码不会在界面中明文显示</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="statusGap">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeType">
+             <enum>QSizePolicy::Fixed</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>12</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QLabel" name="statusLabel">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>20</height>
+             </size>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="lockoutLabel">
+            <property name="text">
+             <string/>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="buttonGap">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeType">
+             <enum>QSizePolicy::Fixed</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>5</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QPushButton" name="loginButton">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>60</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>60</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>立即登录 / 进入后台  →</string>
+            </property>
+            <property name="default">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="noticeGap">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeType">
+             <enum>QSizePolicy::Fixed</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>10</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QFrame" name="securityNoticeFrame">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>44</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>44</height>
+             </size>
+            </property>
+            <layout class="QHBoxLayout" name="securityNoticeLayout">
+             <property name="spacing">
+              <number>6</number>
+             </property>
+             <property name="leftMargin">
+              <number>8</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>7</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <item>
+              <widget class="QLabel" name="securityIcon">
+               <property name="text">
+                <string>ⓘ</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="securityNoticeLabel">
+               <property name="text">
+                <string>登录失败 5 次后将锁定输入 30 秒</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="securityNoticeSpacer">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>0</width>
+                 <height>0</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item>
+              <widget class="QLabel" name="attemptBadge">
+               <property name="text">
+                <string>MAX 5</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <spacer name="noteGap">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeType">
+             <enum>QSizePolicy::Fixed</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>7</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QLabel" name="securityNote">
+            <property name="text">
+             <string>账号或密码错误统一提示，保护管理员账户安全。</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <spacer name="loginBottomStretch">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::Expanding</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>35</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QLabel" name="footerLabel">
+         <property name="text">
+          <string>NCS 智慧充 · 东软电动汽车充电桩应用管理平台</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </widget>
     </item>
    </layout>

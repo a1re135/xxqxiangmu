@@ -1,6 +1,8 @@
 find_package(Qt6 REQUIRED COMPONENTS Core Sql)
 
 add_library(ncs_core STATIC
+    logging/ncslogger.cpp
+    logging/ncslogger.h
     database/databasemanager.cpp
     database/databasemanager.h
 
@@ -12,6 +14,18 @@ add_library(ncs_core STATIC
 
     service/adminauthservice.cpp
     service/adminauthservice.h
+
+    service/statsservice.cpp
+    service/statsservice.h
+
+    service/chargerservice.cpp
+    service/chargerservice.h
+
+    service/stationservice.cpp
+    service/stationservice.h
+
+    service/adminuserservice.cpp
+    service/adminuserservice.h
 )
 
 target_link_libraries(ncs_core

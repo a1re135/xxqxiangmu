@@ -15,7 +15,8 @@ AdminLoginWindow::AdminLoginWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
-    setFixedSize(1280, 800);
+    setMinimumSize(1280, 800);
+    resize(1280, 800);
 
     m_lockoutTimer->setInterval(1000);
 
@@ -63,6 +64,33 @@ AdminLoginWindow::AdminLoginWindow(QWidget *parent)
 AdminLoginWindow::~AdminLoginWindow()
 {
     delete ui;
+}
+
+void AdminLoginWindow::resetForLogout()
+{
+    // A logout returns the login window to a completely fresh state.
+    // This avoids carrying over authentication/lockout UI state from the
+    // previous session.
+    if (m_lockoutTimer->isActive()) {
+        m_lockoutTimer->stop();
+    }
+
+    m_failedAttempts = 0;
+    m_lockoutRemainingSeconds = 0;
+    m_state = LoginState::Ready;
+
+    ui->usernameLineEdit->clear();
+    ui->passwordLineEdit->clear();
+    ui->passwordLineEdit->setEchoMode(QLineEdit::Password);
+    ui->togglePasswordButton->setText(QStringLiteral("显示"));
+
+    ui->lockoutLabel->clear();
+    clearPasswordFeedback();
+    setLoginEnabled(true);
+    ui->loginButton->setText(QStringLiteral("登 录"));
+    setStatusMessage(QString(), false);
+
+    ui->usernameLineEdit->setFocus();
 }
 
 void AdminLoginWindow::setStatusMessage(
