@@ -39,13 +39,16 @@ add_library(ncs_core STATIC
 
     service/stationservice.cpp
     service/stationservice.h
+    
+    service/adminstationservice.cpp
+    service/adminstationservice.h
 
     service/adminuserservice.cpp
     service/adminuserservice.h
 
     # Jiaqi UC-U02
-    service/station_service.cpp
-    service/station_service.h
+    service/stationservice.cpp
+    service/stationservice.h
 
     service/geocoder.cpp
     service/geocoder.h

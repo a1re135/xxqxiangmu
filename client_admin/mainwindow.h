@@ -21,7 +21,7 @@
 
 #include "service/adminauthservice.h"
 #include "service/statsservice.h"
-#include "service/stationservice.h"
+#include "service/adminstationservice.h"
 #include "service/adminuserservice.h"
 
 QT_BEGIN_NAMESPACE
@@ -125,8 +125,8 @@ private:
     QProgressDialog *m_restartProgress = nullptr;
     int m_restartChargerId = 0;
 
-    StationService m_stationService;
-    QList<StationService::StationRecord> m_stationRecords;
+    AdminStationService m_stationService;
+    QList<AdminStationService::StationRecord> m_stationRecords;
     QTableWidget *m_stationTable = nullptr;
     QTableWidget *m_stationChargerTable = nullptr;
     QLabel *m_stationSummaryLabel = nullptr;

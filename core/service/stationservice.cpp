@@ -1,373 +1,198 @@
 #include "stationservice.h"
 
-#include <QSqlDatabase>
-#include <QSqlError>
-#include <QSqlQuery>
-#include <QVariant>
-#include <QRegularExpression>
+#include <QCoreApplication>
+#include <QDir>
+#include <QFile>
+#include <QSettings>
+#include <algorithm>
+
+#include "../util/app_paths.h"
+#include "../util/geo_util.h"
+#include "../util/logger.h"
+
+namespace core {
 
 namespace {
-
-QSqlDatabase connection()
-{
-    return QSqlDatabase::database(QStringLiteral("ncs_connection"));
-}
-
-bool ensureDatabase(QSqlDatabase &db, QString &errorMessage)
-{
-    db = connection();
-    if (!db.isValid() || !db.isOpen()) {
-        errorMessage = QStringLiteral("数据库未打开");
-        return false;
-    }
-    return true;
-}
-
-bool writeOpsLog(QSqlDatabase &db, const QString &operation, QString &errorMessage)
-{
-    QSqlQuery log(db);
-    log.prepare("INSERT INTO ops_log(operation, created_at) "
-                "VALUES(:operation, datetime('now','localtime'))");
-    log.bindValue(":operation", operation);
-    if (!log.exec()) {
-        errorMessage = QStringLiteral("记录运维日志失败：") + log.lastError().text();
-        return false;
-    }
-    return true;
-}
-
-QString makeStationAbbreviation(const QString &name)
-{
-    const QString trimmed = name.trimmed();
-    if (trimmed.isEmpty()) {
-        return QStringLiteral("ST");
-    }
-
-    const QStringList words = trimmed.split(QRegularExpression(QStringLiteral("\\s+")), Qt::SkipEmptyParts);
-    QString result;
-    if (words.size() >= 2) {
-        for (const QString &word : words) {
-            if (!word.isEmpty() && word.at(0).isLetterOrNumber()) {
-                result += word.at(0).toUpper();
-            }
-            if (result.size() >= 2) break;
-        }
-    }
-
-    if (result.size() < 2) {
-        for (const QChar ch : trimmed) {
-            if (!ch.isSpace() && !ch.isPunct() && !ch.isSymbol()) {
-                result += ch;
-            }
-            if (result.size() >= 2) break;
-        }
-    }
-
-    if (result.isEmpty()) {
-        result = QStringLiteral("ST");
-    }
-    while (result.size() < 2) result += QChar('T');
-    return result.left(4).toUpper();
-}
-
+const char *kModule = "StationService";
 } // namespace
 
-bool StationService::loadStations(QList<StationRecord> &out, QString &errorMessage) const
+StationService::StationService(DatabaseManager *db, QObject *parent)
+    : QObject(parent)
+    , m_db(db)
+    , m_repo(m_db ? m_db->connection() : QSqlDatabase())
+    , m_regions({
+          // 区域下拉框预置项（北京市各区，演示定位）
+          {"北京市·房山区·良乡", "北京", 39.7313, 116.1432},
+          {"北京市·海淀区", "北京", 39.9593, 116.2981},
+          {"北京市·朝阳区", "北京", 39.9219, 116.4435},
+          {"北京市·丰台区", "北京", 39.8585, 116.2870},
+          {"北京市·西城区", "北京", 39.9151, 116.3660},
+          {"北京市·东城区", "北京", 39.9175, 116.4180},
+          {"北京市·昌平区", "北京", 40.2208, 116.2312},
+          {"北京市·通州区", "北京", 39.9097, 116.6564},
+      })
 {
-    out.clear();
-    errorMessage.clear();
-
-    QSqlDatabase db;
-    if (!ensureDatabase(db, errorMessage)) return false;
-
-    QSqlQuery q(db);
-    q.prepare(
-        "SELECT s.id, s.name, s.address, s.longitude, s.latitude, s.price, "
-        "COUNT(c.id) AS total_chargers, "
-        "COALESCE(SUM(CASE WHEN c.status != 2 THEN 1 ELSE 0 END), 0) AS non_fault "
-        "FROM station s "
-        "LEFT JOIN charger c ON c.station_id = s.id "
-        "GROUP BY s.id, s.name, s.address, s.longitude, s.latitude, s.price "
-        "ORDER BY s.id");
-
-    if (!q.exec()) {
-        errorMessage = QStringLiteral("查询电站列表失败：") + q.lastError().text();
-        return false;
-    }
-
-    while (q.next()) {
-        StationRecord s;
-        s.id = q.value(0).toInt();
-        s.name = q.value(1).toString();
-        s.address = q.value(2).toString();
-        s.longitude = q.value(3).toDouble();
-        s.latitude = q.value(4).toDouble();
-        s.price = q.value(5).toDouble();
-        s.totalChargers = q.value(6).toInt();
-        s.nonFaultChargers = q.value(7).toInt();
-        s.onlineRate = s.totalChargers > 0
-            ? (static_cast<double>(s.nonFaultChargers) / s.totalChargers * 100.0)
-            : 0.0;
-        out.append(s);
-    }
-
-    return true;
+    connect(&m_geocoder, &Geocoder::finished, this,
+            &StationService::onGeocodeFinished);
 }
 
-bool StationService::loadChargersForStation(int stationId,
-                                             QList<ChargerDetail> &out,
-                                             QString &errorMessage) const
+QStringList StationService::presetRegionNames() const
 {
-    out.clear();
-    errorMessage.clear();
-    if (stationId <= 0) {
-        errorMessage = QStringLiteral("无效的电站 ID");
-        return false;
+    QStringList names;
+    for (const PresetRegion &r : m_regions) {
+        names.append(r.name);
     }
-
-    QSqlDatabase db;
-    if (!ensureDatabase(db, errorMessage)) return false;
-
-    QSqlQuery q(db);
-    q.prepare(
-        "SELECT id, charger_no, type, power, status, total_count, total_minutes "
-        "FROM charger WHERE station_id = :station_id ORDER BY id");
-    q.bindValue(":station_id", stationId);
-
-    if (!q.exec()) {
-        errorMessage = QStringLiteral("查询站内电桩失败：") + q.lastError().text();
-        return false;
-    }
-
-    while (q.next()) {
-        ChargerDetail c;
-        c.id = q.value(0).toInt();
-        c.chargerNo = q.value(1).toString();
-        c.type = q.value(2).toInt();
-        c.power = q.value(3).toDouble();
-        c.status = q.value(4).toInt();
-        c.totalCount = q.value(5).toInt();
-        c.totalMinutes = q.value(6).toInt();
-        out.append(c);
-    }
-    return true;
+    return names;
 }
 
-bool StationService::addStation(const QString &name,
-                                 const QString &address,
-                                 double longitude,
-                                 double latitude,
-                                 double price,
-                                 int initialChargerCount,
-                                 double defaultPower,
-                                 QString &errorMessage) const
+bool StationService::presetRegionByName(const QString &name, PresetRegion *out) const
 {
-    errorMessage.clear();
-    if (name.trimmed().isEmpty()) {
-        errorMessage = QStringLiteral("请输入电站名称");
-        return false;
-    }
-    if (address.trimmed().isEmpty()) {
-        errorMessage = QStringLiteral("请输入详细地址");
-        return false;
-    }
-    if (longitude < -180.0 || longitude > 180.0 || latitude < -90.0 || latitude > 90.0) {
-        errorMessage = QStringLiteral("经纬度超出合法范围：经度 -180~180，纬度 -90~90");
-        return false;
-    }
-    if (price < 0.0 || defaultPower <= 0.0 || initialChargerCount < 0) {
-        errorMessage = QStringLiteral("价格、功率或初始电桩数量不合法");
-        return false;
-    }
-
-    QSqlDatabase db;
-    if (!ensureDatabase(db, errorMessage)) return false;
-    if (!db.transaction()) {
-        errorMessage = QStringLiteral("无法开启事务：") + db.lastError().text();
-        return false;
-    }
-
-    QSqlQuery station(db);
-    station.prepare(
-        "INSERT INTO station(name, address, longitude, latitude, price) "
-        "VALUES(:name, :address, :longitude, :latitude, :price)");
-    station.bindValue(":name", name.trimmed());
-    station.bindValue(":address", address.trimmed());
-    station.bindValue(":longitude", longitude);
-    station.bindValue(":latitude", latitude);
-    station.bindValue(":price", price);
-
-    if (!station.exec()) {
-        errorMessage = QStringLiteral("新增电站失败：") + station.lastError().text();
-        db.rollback();
-        return false;
-    }
-
-    const int stationId = station.lastInsertId().toInt();
-    const QString abbreviation = makeStationAbbreviation(name);
-
-    QSqlQuery charger(db);
-    charger.prepare(
-        "INSERT INTO charger(station_id, charger_no, type, power, status, total_count, total_minutes) "
-        "VALUES(:station_id, :charger_no, 0, :power, 0, 0, 0)");
-
-    for (int i = 1; i <= initialChargerCount; ++i) {
-        const QString chargerNo = QStringLiteral("%1-%2")
-                                      .arg(abbreviation)
-                                      .arg(i, 2, 10, QChar('0'));
-        charger.bindValue(":station_id", stationId);
-        charger.bindValue(":charger_no", chargerNo);
-        charger.bindValue(":power", defaultPower);
-        if (!charger.exec()) {
-            errorMessage = QStringLiteral("批量创建电桩失败：") + charger.lastError().text();
-            db.rollback();
-            return false;
+    for (const PresetRegion &r : m_regions) {
+        if (r.name == name) {
+            if (out) {
+                *out = r;
+            }
+            return true;
         }
     }
-
-    if (!writeOpsLog(db,
-                     QStringLiteral("新增充电站：%1，初始电桩 %2 台")
-                         .arg(name.trimmed())
-                         .arg(initialChargerCount),
-                     errorMessage)) {
-        db.rollback();
-        return false;
-    }
-
-    if (!db.commit()) {
-        errorMessage = QStringLiteral("提交新增电站失败：") + db.lastError().text();
-        db.rollback();
-        return false;
-    }
-    return true;
+    return false;
 }
 
-bool StationService::updateStation(int stationId,
-                                    const QString &name,
-                                    const QString &address,
-                                    double longitude,
-                                    double latitude,
-                                    double price,
-                                    QString &errorMessage) const
+QString StationService::defaultRegionName() const
 {
-    errorMessage.clear();
-    if (stationId <= 0) {
-        errorMessage = QStringLiteral("无效的电站 ID");
-        return false;
-    }
-    if (name.trimmed().isEmpty()) {
-        errorMessage = QStringLiteral("请输入电站名称");
-        return false;
-    }
-    if (address.trimmed().isEmpty()) {
-        errorMessage = QStringLiteral("请输入详细地址");
-        return false;
-    }
-    if (longitude < -180.0 || longitude > 180.0 || latitude < -90.0 || latitude > 90.0) {
-        errorMessage = QStringLiteral("经纬度超出合法范围：经度 -180~180，纬度 -90~90");
-        return false;
-    }
-    if (price < 0.0) {
-        errorMessage = QStringLiteral("单价不能小于 0");
-        return false;
-    }
-
-    QSqlDatabase db;
-    if (!ensureDatabase(db, errorMessage)) return false;
-    if (!db.transaction()) {
-        errorMessage = QStringLiteral("无法开启事务：") + db.lastError().text();
-        return false;
-    }
-
-    QSqlQuery q(db);
-    q.prepare(
-        "UPDATE station SET name=:name, address=:address, longitude=:longitude, "
-        "latitude=:latitude, price=:price WHERE id=:id");
-    q.bindValue(":name", name.trimmed());
-    q.bindValue(":address", address.trimmed());
-    q.bindValue(":longitude", longitude);
-    q.bindValue(":latitude", latitude);
-    q.bindValue(":price", price);
-    q.bindValue(":id", stationId);
-
-    if (!q.exec() || q.numRowsAffected() != 1) {
-        errorMessage = QStringLiteral("修改电站失败：") + q.lastError().text();
-        db.rollback();
-        return false;
-    }
-
-    if (!writeOpsLog(db, QStringLiteral("修改充电站：#%1 %2").arg(stationId).arg(name.trimmed()), errorMessage)) {
-        db.rollback();
-        return false;
-    }
-
-    if (!db.commit()) {
-        errorMessage = QStringLiteral("提交修改电站失败：") + db.lastError().text();
-        db.rollback();
-        return false;
-    }
-    return true;
+    return m_regions.isEmpty() ? QString() : m_regions.first().name;
 }
 
-bool StationService::deleteStation(int stationId, QString &errorMessage) const
+void StationService::locate(const QString &regionName, const QString &address)
 {
-    errorMessage.clear();
-    if (stationId <= 0) {
-        errorMessage = QStringLiteral("无效的电站 ID");
-        return false;
+    const QString addr = address.trimmed();
+    // 未输入地址 → 直接用区域预置坐标
+    if (addr.isEmpty()) {
+        emitPresetLocation(regionName, addr);
+        return;
     }
-
-    QSqlDatabase db;
-    if (!ensureDatabase(db, errorMessage)) return false;
-    if (!db.transaction()) {
-        errorMessage = QStringLiteral("无法开启事务：") + db.lastError().text();
-        return false;
+    // 未配置腾讯地图 Key → 退化为预置坐标（不发起网络请求）
+    const QString key = loadTencentKey();
+    if (key.isEmpty()) {
+        emitPresetLocation(regionName, addr,
+                           QStringLiteral("未配置腾讯地图Key，已使用区域预置位置"));
+        return;
     }
-
-    QSqlQuery check(db);
-    check.prepare("SELECT name FROM station WHERE id=:id");
-    check.bindValue(":id", stationId);
-    if (!check.exec() || !check.next()) {
-        errorMessage = QStringLiteral("找不到指定电站");
-        db.rollback();
-        return false;
-    }
-    const QString name = check.value(0).toString();
-
-    QSqlQuery count(db);
-    count.prepare("SELECT COUNT(*) FROM charger WHERE station_id=:id");
-    count.bindValue(":id", stationId);
-    if (!count.exec() || !count.next()) {
-        errorMessage = QStringLiteral("检查站内电桩失败：") + count.lastError().text();
-        db.rollback();
-        return false;
-    }
-    const int chargerCount = count.value(0).toInt();
-    if (chargerCount > 0) {
-        errorMessage = QStringLiteral("该电站下仍有 %1 个电桩，禁止删除。请先删除电桩后再删除电站。")
-                           .arg(chargerCount);
-        db.rollback();
-        return false;
-    }
-
-    QSqlQuery q(db);
-    q.prepare("DELETE FROM station WHERE id=:id");
-    q.bindValue(":id", stationId);
-    if (!q.exec() || q.numRowsAffected() != 1) {
-        errorMessage = QStringLiteral("删除电站失败：") + q.lastError().text();
-        db.rollback();
-        return false;
-    }
-
-    if (!writeOpsLog(db, QStringLiteral("删除充电站：#%1 %2").arg(stationId).arg(name), errorMessage)) {
-        db.rollback();
-        return false;
-    }
-
-    if (!db.commit()) {
-        errorMessage = QStringLiteral("提交删除电站失败：") + db.lastError().text();
-        db.rollback();
-        return false;
-    }
-    return true;
+    // 已配置 Key → 调用地理编码接口（含超时），失败回退预置坐标
+    m_pendingRegion = regionName;
+    m_pendingAddress = addr;
+    m_geocoder.geocode(addr, key);
 }
+
+QVector<StationListItem>
+StationService::listStationsByDistance(double latitude, double longitude) const
+{
+    QVector<StationListItem> items;
+    const QVector<StationCardData> cards = m_repo.loadStationCards();
+    items.reserve(cards.size());
+    for (const StationCardData &card : cards) {
+        StationListItem item;
+        item.id = card.station.id;
+        item.name = card.station.name;
+        item.address = card.station.address;
+        item.price = card.station.price;
+        item.totalChargers = card.totalChargers;
+        item.freeChargers = card.freeChargers;
+        item.distanceKm = GeoUtil::haversineKm(latitude, longitude,
+                                               card.station.latitude,
+                                               card.station.longitude);
+        items.append(item);
+    }
+    // 按距离升序
+    std::sort(items.begin(), items.end(),
+              [](const StationListItem &a, const StationListItem &b) {
+                  return a.distanceKm < b.distanceKm;
+              });
+    return items;
+}
+
+QString StationService::loadTencentKey()
+{
+    // 1) 环境变量优先（便于测试与部署注入）
+    const QByteArray env = qgetenv("NCS_TENCENT_KEY");
+    if (!env.isEmpty()) {
+        return QString::fromUtf8(env).trimmed();
+    }
+    // 2) config/app.ini：<当前目录> 或 <可执行文件目录>
+    const QString iniPath = resolveDataFile(QStringLiteral("config/app.ini"));
+    if (!iniPath.isEmpty()) {
+        QSettings settings(iniPath, QSettings::IniFormat);
+        const QString key =
+            settings.value(QStringLiteral("map/tencent_key")).toString().trimmed();
+        if (!key.isEmpty()) {
+            return key;
+        }
+    }
+    LOG_INFO(kModule, QStringLiteral("未配置腾讯地图Key，定位将使用区域预置坐标"));
+    return QString();
+}
+
+void StationService::onGeocodeFinished(bool ok, double latitude, double longitude,
+                                       const QString &errorMessage)
+{
+    Q_UNUSED(errorMessage);
+    if (ok) {
+        m_lat = latitude;
+        m_lng = longitude;
+        m_regionName = m_pendingRegion;
+        LocationResult r;
+        r.ok = true;
+        r.regionName = m_pendingRegion;
+        r.latitude = latitude;
+        r.longitude = longitude;
+        r.usedFallback = false;
+        r.message = QStringLiteral("定位成功：%1（(%2, %3)）")
+                        .arg(m_pendingAddress)
+                        .arg(latitude, 0, 'f', 4)
+                        .arg(longitude, 0, 'f', 4);
+        LOG_INFO(kModule, r.message);
+        emit located(r);
+    } else {
+        // 地址解析失败或网络超时 → 退化为预置坐标（UC-U-02 异常流 E1）
+        LOG_WARN(kModule,
+                 QStringLiteral("地址解析失败，已使用默认位置（区域：%1）")
+                     .arg(m_pendingRegion));
+        emitPresetLocation(m_pendingRegion, m_pendingAddress,
+                           QStringLiteral("地址解析失败，已使用默认位置"));
+    }
+}
+
+void StationService::emitPresetLocation(const QString &regionName,
+                                        const QString &address,
+                                        const QString &extraMessage)
+{
+    PresetRegion region;
+    if (!presetRegionByName(regionName, &region)) {
+        LocationResult r;
+        r.ok = false;
+        r.message = QStringLiteral("未知区域：%1").arg(regionName);
+        LOG_ERROR(kModule, r.message);
+        emit located(r);
+        return;
+    }
+    m_lat = region.latitude;
+    m_lng = region.longitude;
+    m_regionName = region.name;
+    LocationResult r;
+    r.ok = true;
+    r.regionName = region.name;
+    r.latitude = region.latitude;
+    r.longitude = region.longitude;
+    r.usedFallback = !extraMessage.isEmpty();
+    r.message = extraMessage.isEmpty()
+                    ? QStringLiteral("定位成功：%1（预置坐标）").arg(region.name)
+                    : extraMessage;
+    Q_UNUSED(address);
+    LOG_INFO(kModule, QStringLiteral("%1 → (%2, %3)")
+                          .arg(r.message)
+                          .arg(r.latitude, 0, 'f', 4)
+                          .arg(r.longitude, 0, 'f', 4));
+    emit located(r);
+}
+
+} // namespace core

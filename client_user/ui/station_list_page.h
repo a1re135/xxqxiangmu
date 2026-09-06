@@ -7,7 +7,7 @@
 // ============================================================
 #include <QWidget>
 
-#include "../../core/service/station_service.h"
+#include "../../core/service/stationservice.h"
 
 class QComboBox;
 class QLabel;

@@ -5,7 +5,7 @@
 // ============================================================
 #include <QFrame>
 
-#include "../../core/service/station_service.h"
+#include "../../core/service/stationservice.h"
 
 namespace client_user {
 

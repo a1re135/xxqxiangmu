@@ -5,7 +5,7 @@
 #include "ui/station_list_page.h"
 
 #include "database/databasemanager.h"
-#include "service/station_service.h"
+#include "service/stationservice.h"
 
 #include <QApplication>
 #include <QMessageBox>
