@@ -346,3 +346,8 @@ void LoginWindow::onLoginClicked()
     emit loginSucceeded(userInfo);
     hide();
 }
+
+UserService &LoginWindow::userService()
+{
+    return m_userService;
+}

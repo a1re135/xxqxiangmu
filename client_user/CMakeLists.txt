@@ -30,6 +30,10 @@ set(PROJECT_SOURCES
 
     ui/station_card_widget.cpp
     ui/station_card_widget.h
+
+    personalhomepage.cpp
+    personalhomepage.h
+    personalhomepage.ui
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)

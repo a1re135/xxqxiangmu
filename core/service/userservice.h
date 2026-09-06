@@ -26,6 +26,36 @@ public:
         UserInfo &userInfo,
         QString &errorMessage
     );
+    bool getUserById(
+            int id,
+            UserInfo &userInfo,
+            QString &errorMessage
+        );
+
+
+        // 修改头像
+    bool updateAvatar(
+        int id,
+        const QString &avatarPath,
+        QString &errorMessage
+    );
+
+
+        // 修改昵称
+    bool updateNickname(
+        int id,
+        const QString &nickname,
+        QString &errorMessage
+    );
+
+
+        // 用户充值
+    bool recharge(
+        int id,
+        double amount,
+        double &newBalance,
+        QString &errorMessage
+    );
 
 private:
     bool findUserByPhone(
