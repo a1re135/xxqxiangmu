@@ -18,6 +18,7 @@ public:
     bool commitTransaction();
     bool rollbackTransaction();
 
+    QSqlDatabase connection() const;
 private:
     QSqlDatabase m_database;
     QString m_databasePath;
