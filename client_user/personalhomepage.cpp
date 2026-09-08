@@ -1,6 +1,7 @@
 #include "personalhomepage.h"
 #include "ui_personalhomepage.h"
 #include "loginwindow.h"
+#include "ordershistorydialog.h"
 
 #include <QFileDialog>
 #include <QPixmap>
@@ -52,12 +53,27 @@ PersonalHomePage::PersonalHomePage(UserService &userService, QWidget *parent)
     ui->ordersBtn->setCursor(Qt::PointingHandCursor);
     ui->serviceBtn->setCursor(Qt::PointingHandCursor);
 
-    connect(ui->ordersBtn, &QPushButton::clicked, this, [this]() {
-        QMessageBox::information(this, "我的订单", "订单模块还未接入，目前按钮已经可以正常响应。");
-    });
     connect(ui->serviceBtn, &QPushButton::clicked, this, [this]() {
         QMessageBox::information(this, "联系客服", "客服电话：400-000-0000\n（当前为演示功能）");
     });
+    connect(
+        ui->ordersBtn,
+        &QPushButton::clicked,
+        this,
+        [this]()
+        {
+            if (m_user.id <= 0) {
+                return;
+            }
+
+            OrderHistoryDialog dialog(
+                m_user.id,
+                this
+            );
+
+            dialog.exec();
+        }
+    );
 }
 
 PersonalHomePage::~PersonalHomePage()
