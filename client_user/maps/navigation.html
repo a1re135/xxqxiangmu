@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>NCS_MAP_LOADING</title>
+
+    <style>
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: #111e33;
+            font-family: sans-serif;
+        }
+
+        #notice {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            z-index: 100;
+            padding: 8px;
+            border-radius: 8px;
+            background: rgba(11, 18, 32, 0.9);
+            color: white;
+            font-size: 12px;
+            pointer-events: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="map"></div>
+    <div id="notice">正在加载地图……</div>
+
+<script>
+    let config;
+    let map;
+    let routeLayer;
+
+    let mapReady = false;
+    let currentMode = "drive";
+    let requestNumber = 0;
+    let cancelRequest = null;
+
+    const notice = document.getElementById("notice");
+
+    // 显示提示，并把状态传回Qt。
+    function report(state, message) {
+        notice.textContent = message;
+
+        document.title =
+            state + "|" + encodeURIComponent(message);
+    }
+
+    function mapFailed() {
+        notice.textContent =
+            "地图加载失败，请使用信息卡或系统浏览器。";
+
+        document.title = "NCS_MAP_FAILED";
+    }
+
+    // 解压腾讯路线接口返回的坐标。
+    function decodePolyline(raw) {
+        if (!Array.isArray(raw)
+            || raw.length < 4
+            || raw.length % 2 !== 0) {
+            throw new Error("路线坐标数据不完整");
+        }
+
+        const values = raw.map(Number);
+
+        for (let i = 2; i < values.length; i++) {
+            values[i] =
+                values[i - 2] + values[i] / 1000000;
+        }
+
+        const points = [];
+
+        for (let i = 0; i < values.length; i += 2) {
+            const lat = values[i];
+            const lng = values[i + 1];
+
+            if (!Number.isFinite(lat)
+                || !Number.isFinite(lng)
+                || lat < -90 || lat > 90
+                || lng < -180 || lng > 180) {
+                throw new Error("路线坐标无效");
+            }
+
+            points.push(new TMap.LatLng(lat, lng));
+        }
+
+        return points;
+    }
+
+    // 驾车、步行是一条完整轨迹；
+    // 公交需要分别读取步行段和乘车段。
+    function collectSegments(route, mode) {
+        if (mode !== "bus") {
+            return [decodePolyline(route.polyline)];
+        }
+
+        const segments = [];
+
+        for (const step of route.steps || []) {
+            if (step.mode === "TRANSIT_FOLDER") {
+                throw new Error(
+                    "此跨城公交方案需要进一步查询，请使用系统浏览器"
+                );
+            }
+
+            let raw;
+
+            if (step.mode === "WALKING") {
+                raw = step.polyline;
+            } else if (step.mode === "TRANSIT") {
+                // 同一段的多条线路是备选项，取第一条。
+                const line = (step.lines || [])[0];
+                raw = line && line.polyline;
+            } else {
+                throw new Error("暂不支持此公交路段类型");
+            }
+
+            // 零距离换乘段可以没有轨迹。
+            if ((!raw || raw.length < 4)
+                && Number(step.distance) === 0) {
+                continue;
+            }
+
+            segments.push(decodePolyline(raw));
+        }
+
+        if (segments.length === 0) {
+            throw new Error("没有可显示的公交轨迹");
+        }
+
+        return segments;
+    }
+
+    function drawRoute(route, mode) {
+        const segments = collectSegments(route, mode);
+
+        const geometries = segments.map((points, index) => ({
+            id: "segment_" + index,
+            styleId: "route",
+            paths: points
+        }));
+
+        routeLayer.setGeometries(geometries);
+
+        // 调整地图，让整条路线都进入视野。
+        const first = segments[0][0];
+        const bounds = new TMap.LatLngBounds(first, first);
+
+        for (const segment of segments) {
+            for (const point of segment) {
+                bounds.extend(point);
+            }
+        }
+
+        map.fitBounds(bounds);
+    }
+
+    function requestRoute() {
+        if (!mapReady) {
+            return;
+        }
+
+        // 取消上一轮等待，避免旧路线覆盖新选择。
+        if (cancelRequest) {
+            cancelRequest();
+        }
+
+        const number = ++requestNumber;
+        const mode = currentMode;
+
+        const apiModes = {
+            drive: "driving",
+            walk: "walking",
+            bus: "transit"
+        };
+
+        const modeNames = {
+            drive: "驾车",
+            walk: "步行",
+            bus: "公交"
+        };
+
+        routeLayer.setGeometries([]);
+
+        report(
+            "NCS_ROUTE_LOADING",
+            "正在查询" + modeNames[mode] + "路线……"
+        );
+
+        const script = document.createElement("script");
+        const callbackName = "ncsRouteCallback_" + number;
+
+        let finished = false;
+        let timeoutId;
+
+        function cleanup() {
+            clearTimeout(timeoutId);
+            script.remove();
+
+            // 忽略极晚到达的JSONP响应。
+            window[callbackName] = function () {};
+        }
+
+        function fail(message) {
+            if (finished || number !== requestNumber) {
+                return;
+            }
+
+            finished = true;
+            cleanup();
+
+            report(
+                "NCS_ROUTE_FAILED",
+                message + "。可重试或使用系统浏览器。"
+            );
+        }
+
+        cancelRequest = function () {
+            finished = true;
+            cleanup();
+        };
+
+        // 腾讯接口返回后执行这里。
+        window[callbackName] = function (response) {
+            if (finished || number !== requestNumber) {
+                return;
+            }
+
+            if (!response || response.status !== 0) {
+                const code =
+                    response ? response.status : "未知";
+
+                const reason =
+                    response && response.message
+                    ? response.message
+                    : "响应异常";
+
+                fail(
+                    "路线查询失败（" + code + "）："
+                    + reason
+                );
+                return;
+            }
+
+            const routes =
+                response.result && response.result.routes;
+
+            if (!Array.isArray(routes) || routes.length === 0) {
+                fail("没有找到可用路线");
+                return;
+            }
+
+            try {
+                // 显示接口返回的第一条方案。
+                const route = routes[0];
+
+                drawRoute(route, mode);
+
+                const distance = Number(route.distance);
+                const duration = Number(route.duration);
+
+                const details = [];
+
+                if (Number.isFinite(distance)) {
+                    details.push(
+                        (distance / 1000).toFixed(1)
+                        + " 公里"
+                    );
+                }
+
+                if (Number.isFinite(duration)) {
+                    details.push(
+                        "预计 " + Math.ceil(duration)
+                        + " 分钟"
+                    );
+                }
+
+                report(
+                    "NCS_ROUTE_OK",
+                    modeNames[mode] + "路线已绘制"
+                    + (details.length
+                        ? " · " + details.join(" · ")
+                        : "")
+                );
+
+                finished = true;
+                cleanup();
+            } catch (error) {
+                routeLayer.setGeometries([]);
+                fail(error.message || "路线绘制失败");
+            }
+        };
+
+        script.onerror = function () {
+            fail("路线请求无法连接");
+        };
+
+        const url = new URL(
+            "https://apis.map.qq.com/ws/direction/v1/"
+            + apiModes[mode] + "/"
+        );
+
+        url.searchParams.set(
+            "from",
+            config.startLat + "," + config.startLng
+        );
+
+        url.searchParams.set(
+            "to",
+            config.endLat + "," + config.endLng
+        );
+
+        url.searchParams.set("key", config.key);
+        url.searchParams.set("output", "jsonp");
+        url.searchParams.set("callback", callbackName);
+
+        script.src = url.toString();
+
+        // 10秒内无结果，显示超时。
+        timeoutId = setTimeout(function () {
+            fail("路线查询超时");
+        }, 10000);
+
+        document.head.appendChild(script);
+    }
+
+    // Qt切换出行方式时调用。
+    window.ncsSetMode = function (mode) {
+        if (!["drive", "walk", "bus"].includes(mode)) {
+            return;
+        }
+
+        currentMode = mode;
+
+        if (mapReady) {
+            requestRoute();
+        }
+    };
+
+    // 腾讯地图脚本加载完成后调用。
+    window.initMap = function () {
+        try {
+            const start = new TMap.LatLng(
+                config.startLat,
+                config.startLng
+            );
+
+            const end = new TMap.LatLng(
+                config.endLat,
+                config.endLng
+            );
+
+            map = new TMap.Map("map", {
+                center: start,
+                zoom: 12,
+                pitch: 0,
+                rotation: 0
+            });
+
+            new TMap.MultiMarker({
+                map: map,
+                geometries: [
+                    {
+                        id: "start",
+                        position: start,
+                        content: "起"
+                    },
+                    {
+                        id: "end",
+                        position: end,
+                        content: "终"
+                    }
+                ]
+            });
+
+            // 用于显示实际路线的图层。
+            routeLayer = new TMap.MultiPolyline({
+                map: map,
+                styles: {
+                    route: new TMap.PolylineStyle({
+                        color: "#3777FF",
+                        width: 6,
+                        borderWidth: 2,
+                        borderColor: "#FFFFFF",
+                        lineCap: "round"
+                    })
+                },
+                geometries: []
+            });
+
+            map.on("tilesloaded", function () {
+                // 只在底图首次加载完成后自动查询一次。
+                if (mapReady) {
+                    return;
+                }
+
+                mapReady = true;
+                document.title = "NCS_MAP_READY";
+
+                setTimeout(requestRoute, 0);
+            });
+
+            const bounds = new TMap.LatLngBounds(
+                new TMap.LatLng(
+                    Math.min(
+                        config.startLat, config.endLat
+                    ) - 0.005,
+
+                    Math.min(
+                        config.startLng, config.endLng
+                    ) - 0.005
+                ),
+                new TMap.LatLng(
+                    Math.max(
+                        config.startLat, config.endLat
+                    ) + 0.005,
+
+                    Math.max(
+                        config.startLng, config.endLng
+                    ) + 0.005
+                )
+            );
+
+            map.fitBounds(bounds);
+        } catch (error) {
+            mapFailed();
+        }
+    };
+
+    try {
+        config = JSON.parse(
+            decodeURIComponent(location.hash.slice(1))
+        );
+
+        if (!config.key) {
+            throw new Error("Missing map key");
+        }
+
+        currentMode =
+            window.ncsPendingMode || config.mode || "drive";
+
+        if (!["drive", "walk", "bus"].includes(currentMode)) {
+            currentMode = "drive";
+        }
+
+        const script = document.createElement("script");
+
+        script.src =
+            "https://map.qq.com/api/gljs?v=1.exp"
+            + "&key=" + encodeURIComponent(config.key)
+            + "&callback=initMap";
+
+        script.onerror = mapFailed;
+        document.head.appendChild(script);
+    } catch (error) {
+        mapFailed();
+    }
+</script>
+</body>
+</html>

@@ -45,6 +45,8 @@ struct StationListItem {
     int totalChargers = 0;
     int freeChargers = 0; // 实时统计 status=0
     double distanceKm = 0.0;
+    double latitude = 0.0;
+    double longitude = 0.0;
 };
 
 class StationService : public QObject {
@@ -65,6 +67,12 @@ public:
     // 按当前位置与全部电站的 Haversine 距离升序返回列表
     QVector<StationListItem> listStationsByDistance(double latitude,
                                                    double longitude) const;
+
+    bool getChargersByStationId(
+        int stationId,
+        QVector<ChargerData> &chargers,
+        QString *errorMessage = nullptr
+    ) const;
 
     double lastLatitude() const { return m_lat; }
     double lastLongitude() const { return m_lng; }

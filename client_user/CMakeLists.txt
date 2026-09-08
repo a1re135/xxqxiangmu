@@ -25,15 +25,25 @@ set(PROJECT_SOURCES
     loginwindow.h
     loginwindow.ui
 
+    personalhomepage.cpp
+    personalhomepage.h
+    personalhomepage.ui
+
     ui/station_list_page.cpp
     ui/station_list_page.h
 
     ui/station_card_widget.cpp
     ui/station_card_widget.h
 
-    personalhomepage.cpp
-    personalhomepage.h
-    personalhomepage.ui
+    navigationdialog.cpp
+    navigationdialog.h
+    navigation_resources.qrc
+
+    ordersettlementdialog.cpp
+    ordersettlementdialog.h
+
+    ordershistorydialog.cpp
+    ordershistorydialog.h
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)

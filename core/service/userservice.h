@@ -57,6 +57,26 @@ public:
         QString &errorMessage
     );
 
+    bool findUnfinishedOrder(
+        int userId,
+        int &orderId,
+        QString &errorMessage
+    );
+
+    bool cancelReservation(
+        int userId,
+        int orderId,
+        QString &errorMessage
+    );
+
+    bool startCharging(
+        int userId,
+        int stationId,
+        int chargerId,
+        int &orderId,
+        QString &errorMessage
+    );
+
 private:
     bool findUserByPhone(
         const QString &phone,

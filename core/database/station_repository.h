@@ -26,6 +26,15 @@ struct StationCardData {
     int freeChargers = 0;
 };
 
+struct ChargerData {
+    int id = 0;
+    QString chargerNo;
+    int type = 0;
+    double power = 0.0;
+    int status = 0;
+    int totalCount = 0;
+};
+
 class StationRepository {
 public:
     explicit StationRepository(QSqlDatabase db);
@@ -40,6 +49,12 @@ public:
     int countFreeChargers(int stationId) const;
 
     bool loadStationById(int id, Station *out) const;
+
+    bool loadChargersByStationId(
+        int stationId,
+        QVector<ChargerData> &chargers,
+        QString *errorMessage = nullptr
+    ) const;
 
 private:
     QSqlDatabase m_db;
