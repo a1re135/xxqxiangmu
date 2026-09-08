@@ -19,6 +19,7 @@ public:
 
 signals:
     void clicked(int stationId);
+    void navigationRequested(int stationId);
 
 protected:
     void mouseReleaseEvent(QMouseEvent *event) override;

@@ -14,6 +14,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets REQUIRED)
 find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Widgets REQUIRED)
 
+find_package(
+    Qt${QT_VERSION_MAJOR}
+    QUIET
+    COMPONENTS WebEngineWidgets
+)
+
 set(PROJECT_SOURCES
     main.cpp
 
@@ -69,12 +75,40 @@ target_link_libraries(client_user
     ncs_core
 )
 
+if(TARGET Qt${QT_VERSION_MAJOR}::WebEngineWidgets)
+    target_link_libraries(
+        client_user
+        PRIVATE
+        Qt${QT_VERSION_MAJOR}::WebEngineWidgets
+    )
+
+    target_compile_definitions(
+        client_user
+        PRIVATE
+        NCS_HAS_WEBENGINE=1
+    )
+else()
+    target_compile_definitions(
+        client_user
+        PRIVATE
+        NCS_HAS_WEBENGINE=0
+    )
+endif()
+
 set_target_properties(client_user PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER my.example.com
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
     MACOSX_BUNDLE TRUE
     WIN32_EXECUTABLE TRUE
+)
+
+add_custom_command(TARGET client_user POST_BUILD
+    COMMAND "${CMAKE_COMMAND}" -E copy_directory
+            "${CMAKE_SOURCE_DIR}/config"
+            "$<TARGET_FILE_DIR:client_user>/config"
+    COMMENT "Copy charging page configuration"
+    VERBATIM
 )
 
 if(QT_VERSION_MAJOR EQUAL 6)

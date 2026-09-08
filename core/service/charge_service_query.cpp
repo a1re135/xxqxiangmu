@@ -323,28 +323,45 @@ bool ChargeService::getReceipt(
     receipt.simulatedSeconds =
         query.value("simulated_seconds").toLongLong();
 
-    query.finish();
-
     if (receipt.status == 1) {
-        // 充电中：按当前时刻实时计算电量与费用。
+        // We are done reading this query before performing
+        // another query through getOrderInfo().
+        query.finish();
+
         ChargeOrderInfo info;
+
         if (!getOrderInfo(
-                userId, orderId, info, errorMessage)) {
+                userId,
+                orderId,
+                info,
+                errorMessage)) {
             return false;
         }
+
         receipt.energy = info.energy;
         receipt.amount = info.amount;
         receipt.unitPrice = info.price;
         receipt.simulatedSeconds = info.simulatedSeconds;
+
         receipt.paidAmount = -1;
         receipt.debtAmount = -1;
         receipt.balanceAfter = -1;
+
         return true;
     }
 
-    receipt.paidAmount = query.value("paid_amount").toDouble();
-    receipt.debtAmount = query.value("debt_amount").toDouble();
-    receipt.balanceAfter = query.value("balance_after").toDouble();
+    // Read settlement fields BEFORE query.finish().
+    receipt.paidAmount =
+        query.value("paid_amount").toDouble();
+
+    receipt.debtAmount =
+        query.value("debt_amount").toDouble();
+
+    receipt.balanceAfter =
+        query.value("balance_after").toDouble();
+
+    // Now we are finished with the result.
+    query.finish();
 
     // 历史种子订单没有 simulated_seconds，
     // 用开始/结束时间差补算充电时长。
