@@ -3,6 +3,7 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QMouseEvent>
+#include <QPushButton>
 #include <QVBoxLayout>
 
 namespace client_user {
@@ -19,18 +20,61 @@ void StationCardWidget::setupUi()
 {
     setObjectName(QStringLiteral("stationCard"));
     setCursor(Qt::PointingHandCursor);
-    setFixedHeight(92);
+    setMinimumHeight(120);
+    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
 
     auto *nameLabel = new QLabel(m_item.name, this);
     nameLabel->setObjectName(QStringLiteral("stationName"));
+    nameLabel->setWordWrap(true);
+    nameLabel->setTextFormat(Qt::PlainText);
 
-    auto *distLabel = new QLabel(
-        QStringLiteral("%1 km").arg(m_item.distanceKm, 0, 'f', 1), this);
-    distLabel->setObjectName(QStringLiteral("distLabel"));
+    // 使用按钮显示距离，让它单独接收点击。
+    auto *distLabel = new QPushButton(
+        QStringLiteral("%1 km  ›")
+            .arg(m_item.distanceKm, 0, 'f', 1),
+        this
+    );
+
+    distLabel->setObjectName(QStringLiteral("distanceButton"));
+    distLabel->setCursor(Qt::PointingHandCursor);
+    distLabel->setToolTip(QStringLiteral("点击查看前往该站的路线"));
+
+    distLabel->setStyleSheet(R"(
+        QPushButton {
+            background-color: #142C46;
+            color: #7DD3FC;
+            border: 1px solid #264B70;
+            border-radius: 8px;
+            padding: 5px 8px;
+            min-height: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        QPushButton:hover {
+            background-color: #1E4065;
+            border-color: #60A5FA;
+        }
+
+        QPushButton:pressed {
+            background-color: #28558A;
+        }
+    )");
+
+    connect(
+        distLabel,
+        &QPushButton::clicked,
+        this,
+        [this]()
+        {
+            emit navigationRequested(m_item.id);
+        }
+    );
 
     auto *addressLabel = new QLabel(m_item.address, this);
     addressLabel->setObjectName(QStringLiteral("stationAddress"));
-    addressLabel->setWordWrap(false);
+    addressLabel->setWordWrap(true);
+    addressLabel->setTextFormat(Qt::PlainText);
     addressLabel->setTextInteractionFlags(Qt::NoTextInteraction);
 
     auto *priceLabel =
@@ -54,8 +98,8 @@ void StationCardWidget::setupUi()
     bottomRow->addWidget(freeLabel);
 
     auto *layout = new QVBoxLayout(this);
-    layout->setContentsMargins(14, 10, 14, 10);
-    layout->setSpacing(4);
+    layout->setContentsMargins(14, 14, 14, 14);
+    layout->setSpacing(8);
     layout->addLayout(topRow);
     layout->addWidget(addressLabel);
     layout->addLayout(bottomRow);

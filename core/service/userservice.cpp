@@ -248,3 +248,289 @@ bool UserService::recharge(int id, double amount, double &newBalance, QString &e
     }
     return true;
 }
+
+bool UserService::findUnfinishedOrder(
+    int userId,
+    int &orderId,
+    QString &errorMessage)
+{
+    orderId = -1;
+    errorMessage.clear();
+
+    if (userId <= 0) {
+        errorMessage = QStringLiteral("用户未登录");
+        return false;
+    }
+
+    QSqlDatabase db;
+    if (!getOpenDb(db, errorMessage)) {
+        return false;
+    }
+
+    QSqlQuery query(db);
+
+    if (!query.prepare(
+            "SELECT id "
+            "FROM charging_order "
+            "WHERE user_id = :userId "
+            "AND status IN (0, 1) "
+            "ORDER BY id ASC "
+            "LIMIT 1")) {
+        errorMessage = QStringLiteral("准备订单查询失败：")
+                       + query.lastError().text();
+        return false;
+    }
+
+    query.bindValue(":userId", userId);
+
+    if (!query.exec()) {
+        errorMessage = QStringLiteral("查询未完成订单失败：")
+                       + query.lastError().text();
+        return false;
+    }
+
+    if (query.next()) {
+        orderId = query.value(0).toInt();
+    } else if (query.lastError().isValid()) {
+        errorMessage = QStringLiteral("读取订单失败：")
+                       + query.lastError().text();
+        return false;
+    }
+
+    return true;
+}
+
+bool UserService::cancelReservation(
+    int userId,
+    int orderId,
+    QString &errorMessage)
+{
+    errorMessage.clear();
+
+    if (userId <= 0 || orderId <= 0) {
+        errorMessage = QStringLiteral("用户或订单信息无效");
+        return false;
+    }
+
+    QSqlDatabase db;
+    if (!getOpenDb(db, errorMessage)) {
+        return false;
+    }
+
+    // 订单修改与电桩释放必须一起成功。
+    if (!db.transaction()) {
+        errorMessage = QStringLiteral("无法开始事务：")
+                       + db.lastError().text();
+        return false;
+    }
+
+    auto fail = [&](const QString &message) {
+        db.rollback();
+        errorMessage = message;
+        return false;
+    };
+
+    QSqlQuery updateOrder(db);
+
+    if (!updateOrder.prepare(
+            "UPDATE charging_order "
+            "SET status = 3, end_time = :endTime "
+            "WHERE id = :orderId "
+            "AND user_id = :userId "
+            "AND status = 0 "
+            "AND COALESCE(start_time, '') = '' "
+            "AND energy = 0 AND amount = 0")) {
+        return fail(
+            QStringLiteral("准备取消订单失败：")
+            + updateOrder.lastError().text());
+    }
+
+    updateOrder.bindValue(
+        ":endTime",
+        QDateTime::currentDateTime().toString(
+            "yyyy-MM-dd HH:mm:ss"));
+    updateOrder.bindValue(":orderId", orderId);
+    updateOrder.bindValue(":userId", userId);
+
+    if (!updateOrder.exec()) {
+        return fail(
+            QStringLiteral("取消订单失败：")
+            + updateOrder.lastError().text());
+    }
+
+    if (updateOrder.numRowsAffected() != 1) {
+        return fail(
+            QStringLiteral(
+                "订单不存在、不属于当前用户，"
+                "或已开始充电，不能取消预约。"));
+    }
+
+    QSqlQuery releaseCharger(db);
+
+    // 只释放使用中的桩：
+    // 不覆盖故障状态，也不释放仍有其他有效订单的桩。
+    if (!releaseCharger.prepare(
+            "UPDATE charger "
+            "SET status = 0 "
+            "WHERE id = ("
+            "    SELECT charger_id FROM charging_order "
+            "    WHERE id = :orderId AND user_id = :userId"
+            ") "
+            "AND status = 1 "
+            "AND NOT EXISTS ("
+            "    SELECT 1 FROM charging_order o "
+            "    WHERE o.charger_id = charger.id "
+            "    AND o.status IN (0, 1)"
+            ")")) {
+        return fail(
+            QStringLiteral("准备释放电桩失败：")
+            + releaseCharger.lastError().text());
+    }
+
+    releaseCharger.bindValue(":orderId", orderId);
+    releaseCharger.bindValue(":userId", userId);
+
+    if (!releaseCharger.exec()) {
+        return fail(
+            QStringLiteral("释放电桩失败：")
+            + releaseCharger.lastError().text());
+    }
+
+    if (!db.commit()) {
+        const QString reason = db.lastError().text();
+        db.rollback();
+        errorMessage = QStringLiteral("保存取消结果失败：")
+                       + reason;
+        return false;
+    }
+
+    return true;
+}
+
+bool UserService::startCharging(
+    int userId,
+    int stationId,
+    int chargerId,
+    int &orderId,
+    QString &errorMessage)
+{
+    orderId = -1;
+    errorMessage.clear();
+
+    if (userId <= 0 || stationId <= 0 || chargerId <= 0) {
+        errorMessage = QStringLiteral("用户或电桩信息无效");
+        return false;
+    }
+
+    QSqlDatabase db;
+    if (!getOpenDb(db, errorMessage)) {
+        return false;
+    }
+
+    if (!db.transaction()) {
+        errorMessage = QStringLiteral("无法开始事务：")
+                       + db.lastError().text();
+        return false;
+    }
+
+    auto fail = [&](const QString &message) {
+        db.rollback();
+        errorMessage = message;
+        return false;
+    };
+
+    // 直接通过条件更新抢占空闲桩。
+    // 避免查询时空闲、真正开始时已被其他用户占用。
+    QSqlQuery occupy(db);
+
+    if (!occupy.prepare(
+            "UPDATE charger "
+            "SET status = 1 "
+            "WHERE id = :chargerId "
+            "AND station_id = :stationId "
+            "AND status = 0")) {
+        return fail(
+            QStringLiteral("准备更新电桩失败：")
+            + occupy.lastError().text());
+    }
+
+    occupy.bindValue(":chargerId", chargerId);
+    occupy.bindValue(":stationId", stationId);
+
+    if (!occupy.exec()) {
+        return fail(
+            QStringLiteral("更新电桩失败：")
+            + occupy.lastError().text());
+    }
+
+    if (occupy.numRowsAffected() != 1) {
+        return fail(
+            QStringLiteral(
+                "电桩已被占用、发生故障或不属于本站，"
+                "请刷新后重新选择。"));
+    }
+
+    // 在同一事务中再次检查未完成订单。
+    // 即使绕过界面检查，也不能重复创建。
+    QSqlQuery createOrder(db);
+
+    if (!createOrder.prepare(
+            "INSERT INTO charging_order "
+            "(user_id, charger_id, start_time, "
+            "energy, amount, status) "
+            "SELECT :userId, :chargerId, :startTime, 0, 0, 1 "
+            "WHERE EXISTS ("
+            "    SELECT 1 FROM user "
+            "    WHERE id = :userId AND status = 1"
+            ") "
+            "AND NOT EXISTS ("
+            "    SELECT 1 FROM charging_order "
+            "    WHERE user_id = :userId "
+            "    AND status IN (0, 1)"
+            ")")) {
+        return fail(
+            QStringLiteral("准备创建订单失败：")
+            + createOrder.lastError().text());
+    }
+
+    createOrder.bindValue(":userId", userId);
+    createOrder.bindValue(":chargerId", chargerId);
+    createOrder.bindValue(
+        ":startTime",
+        QDateTime::currentDateTime().toString(
+            "yyyy-MM-dd HH:mm:ss")
+    );
+
+    if (!createOrder.exec()) {
+        return fail(
+            QStringLiteral("创建订单失败：")
+            + createOrder.lastError().text());
+    }
+
+    if (createOrder.numRowsAffected() != 1) {
+        return fail(
+            QStringLiteral(
+                "用户不存在、账号不可用，"
+                "或已有未完成订单，请先处理原订单。"));
+    }
+
+    bool validId = false;
+    const int newOrderId =
+        createOrder.lastInsertId().toInt(&validId);
+
+    if (!validId || newOrderId <= 0) {
+        return fail(QStringLiteral("无法获取新订单编号"));
+    }
+
+    if (!db.commit()) {
+        const QString reason = db.lastError().text();
+        db.rollback();
+
+        errorMessage = QStringLiteral("保存充电订单失败：")
+                       + reason;
+        return false;
+    }
+
+    orderId = newOrderId;
+    return true;
+}

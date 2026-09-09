@@ -96,6 +96,8 @@ StationService::listStationsByDistance(double latitude, double longitude) const
         item.name = card.station.name;
         item.address = card.station.address;
         item.price = card.station.price;
+        item.latitude = card.station.latitude;
+        item.longitude = card.station.longitude;
         item.totalChargers = card.totalChargers;
         item.freeChargers = card.freeChargers;
         item.distanceKm = GeoUtil::haversineKm(latitude, longitude,
@@ -193,6 +195,19 @@ void StationService::emitPresetLocation(const QString &regionName,
                           .arg(r.latitude, 0, 'f', 4)
                           .arg(r.longitude, 0, 'f', 4));
     emit located(r);
+}
+
+bool StationService::getChargersByStationId(
+    int stationId,
+    QVector<ChargerData> &chargers,
+    QString *errorMessage
+) const
+{
+    return m_repo.loadChargersByStationId(
+        stationId,
+        chargers,
+        errorMessage
+    );
 }
 
 } // namespace core

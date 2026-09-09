@@ -1,6 +1,7 @@
 #include "personalhomepage.h"
 #include "ui_personalhomepage.h"
 #include "loginwindow.h"
+#include "ordershistorydialog.h"
 
 #include <QFileDialog>
 #include <QPixmap>
@@ -9,6 +10,12 @@
 #include <QEvent>
 #include <QGraphicsDropShadowEffect>
 #include <QColor>
+#include <QDialog>
+#include <QFrame>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QPushButton>
+#include <QVBoxLayout>
 
 namespace {
 const char *kSuccess = "#22C55E";
@@ -28,6 +35,254 @@ QGraphicsDropShadowEffect *makeShadow()
     shadow->setColor(QColor(0, 0, 0, 120));
     return shadow;
 }
+
+void showCustomerServiceDialog(
+    QWidget *parent)
+{
+    QDialog dialog(parent);
+
+    dialog.setWindowTitle(
+        QStringLiteral("联系客服")
+    );
+
+    dialog.setFixedSize(
+        360,
+        250
+    );
+
+    dialog.setStyleSheet(R"(
+
+        QDialog {
+            background-color: #08111F;
+        }
+
+        QLabel {
+            background: transparent;
+            color: #DCEBFF;
+        }
+
+        QLabel#serviceIcon {
+            background-color: #163B63;
+
+            color: #60A5FA;
+
+            border-radius: 25px;
+
+            font-size: 24px;
+        }
+
+        QLabel#serviceTitle {
+            color: #FFFFFF;
+
+            font-size: 20px;
+            font-weight: 800;
+        }
+
+        QLabel#serviceSubtitle {
+            color: #8199B8;
+
+            font-size: 11px;
+        }
+
+        QFrame#serviceCard {
+            background-color: #0E2037;
+
+            border: 1px solid #295078;
+            border-radius: 13px;
+        }
+
+        QLabel#phoneTitle {
+            color: #8FA9C8;
+
+            font-size: 11px;
+        }
+
+        QLabel#phoneValue {
+            color: #60A5FA;
+
+            font-size: 19px;
+            font-weight: 800;
+        }
+
+        QPushButton {
+            background-color: #2563EB;
+
+            color: white;
+
+            border: 1px solid #4B8CFF;
+            border-radius: 9px;
+
+            min-height: 38px;
+
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        QPushButton:hover {
+            background-color: #397EF1;
+        }
+
+    )");
+
+
+    auto *layout =
+        new QVBoxLayout(&dialog);
+
+    layout->setContentsMargins(
+        20, 18, 20, 18
+    );
+
+    layout->setSpacing(10);
+
+
+    auto *icon =
+        new QLabel(
+            QStringLiteral("🎧"),
+            &dialog
+        );
+
+    icon->setObjectName(
+        QStringLiteral("serviceIcon")
+    );
+
+    icon->setFixedSize(
+        50,
+        50
+    );
+
+    icon->setAlignment(
+        Qt::AlignCenter
+    );
+
+
+    auto *title =
+        new QLabel(
+            QStringLiteral(
+                "NCS 客户服务"
+            ),
+            &dialog
+        );
+
+    title->setObjectName(
+        QStringLiteral("serviceTitle")
+    );
+
+
+    auto *subtitle =
+        new QLabel(
+            QStringLiteral(
+                "如有充电或订单问题，"
+                "请联系我们"
+            ),
+            &dialog
+        );
+
+    subtitle->setObjectName(
+        QStringLiteral(
+            "serviceSubtitle"
+        )
+    );
+
+
+    auto *header =
+        new QHBoxLayout;
+
+    header->addWidget(icon);
+
+    auto *headerText =
+        new QVBoxLayout;
+
+    headerText->addWidget(title);
+    headerText->addWidget(subtitle);
+
+    header->addLayout(
+        headerText,
+        1
+    );
+
+
+    layout->addLayout(header);
+
+
+    auto *card =
+        new QFrame(&dialog);
+
+    card->setObjectName(
+        QStringLiteral("serviceCard")
+    );
+
+
+    auto *cardLayout =
+        new QVBoxLayout(card);
+
+    cardLayout->setContentsMargins(
+        16, 13, 16, 13
+    );
+
+
+    auto *phoneTitle =
+        new QLabel(
+            QStringLiteral(
+                "客服电话"
+            ),
+            card
+        );
+
+    phoneTitle->setObjectName(
+        QStringLiteral(
+            "phoneTitle"
+        )
+    );
+
+
+    auto *phone =
+        new QLabel(
+            QStringLiteral(
+                "400-000-0000"
+            ),
+            card
+        );
+
+    phone->setObjectName(
+        QStringLiteral(
+            "phoneValue"
+        )
+    );
+
+
+    cardLayout->addWidget(
+        phoneTitle
+    );
+
+    cardLayout->addWidget(
+        phone
+    );
+
+
+    layout->addWidget(card);
+
+
+    auto *okButton =
+        new QPushButton(
+            QStringLiteral("我知道了"),
+            &dialog
+        );
+
+    layout->addWidget(
+        okButton
+    );
+
+    QObject::connect(
+        okButton,
+        &QPushButton::clicked,
+        &dialog,
+        &QDialog::accept
+    );
+
+
+    dialog.exec();
+}
+
 }
 
 PersonalHomePage::PersonalHomePage(UserService &userService, QWidget *parent)
@@ -36,6 +291,182 @@ PersonalHomePage::PersonalHomePage(UserService &userService, QWidget *parent)
     ui->setupUi(this);
     setFixedSize(420, 760); // .ui 中已设置 min/max size，这里再保险一层
 
+    setStyleSheet(
+        "QMainWindow {"
+        "background-color:#08111F;"
+        "}"
+    );
+
+    ui->profileCard->setStyleSheet(
+        QStringLiteral(
+            "QFrame#profileCard {"
+            "background:#0E1D32;"
+            "border:1px solid #243E5E;"
+            "border-radius:16px;"
+            "}"
+        )
+    );
+
+    ui->walletCard->setStyleSheet(
+        QStringLiteral(
+            "QFrame#walletCard {"
+            "background:#0E1D32;"
+            "border:1px solid #243E5E;"
+            "border-radius:16px;"
+            "}"
+        )
+    );
+
+    ui->quickActionsCard->setStyleSheet(
+        QStringLiteral(
+            "QFrame#quickActionsCard {"
+            "background:#0E1D32;"
+            "border:1px solid #243E5E;"
+            "border-radius:16px;"
+            "}"
+        )
+    );
+
+
+    // Remove the strange dark bars behind section titles.
+    ui->walletTitleLabel->setStyleSheet(
+        "background:transparent;"
+        "color:#8FA9C8;"
+        "font-size:12px;"
+        "font-weight:600;"
+    );
+
+    ui->quickTitleLabel->setStyleSheet(
+        "background:transparent;"
+        "color:#8FA9C8;"
+        "font-size:12px;"
+        "font-weight:600;"
+    );
+
+
+    ui->balanceValueLabel->setStyleSheet(
+        "background:transparent;"
+        "color:#FFFFFF;"
+        "font-size:30px;"
+        "font-weight:800;"
+    );
+
+
+    ui->nicknameEdit->setStyleSheet(R"(
+
+        QLineEdit {
+            background-color: #091729;
+
+            color: #F2F5FA;
+
+            border: 1px solid #294766;
+            border-radius: 10px;
+
+            padding: 9px 11px;
+        }
+
+        QLineEdit:focus {
+            border: 1px solid #60A5FA;
+        }
+
+    )");
+
+
+    ui->rechargeEdit->setStyleSheet(
+        ui->nicknameEdit->styleSheet()
+    );
+
+
+    const QString primaryButtonStyle = R"(
+
+        QPushButton {
+            background-color: #2563EB;
+
+            color: white;
+
+            border: 1px solid #4B8CFF;
+            border-radius: 9px;
+
+            padding: 9px 15px;
+
+            font-weight: 700;
+        }
+
+        QPushButton:hover {
+            background-color: #397EF1;
+        }
+
+    )";
+
+
+    ui->saveNicknameBtn->setStyleSheet(
+        primaryButtonStyle
+    );
+
+    ui->rechargeBtn->setStyleSheet(
+        primaryButtonStyle
+    );
+
+
+    const QString actionButtonStyle = R"(
+
+        QPushButton {
+            background-color: #10233B;
+
+            color: #D8E9FF;
+
+            border: 1px solid #294B6D;
+            border-radius: 11px;
+
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        QPushButton:hover {
+            background-color: #173655;
+
+            color: #FFFFFF;
+
+            border: 1px solid #60A5FA;
+        }
+
+    )";
+
+
+    ui->homeBtn->setStyleSheet(
+        actionButtonStyle
+    );
+
+    ui->ordersBtn->setStyleSheet(
+        actionButtonStyle
+    );
+
+    ui->serviceBtn->setStyleSheet(
+        actionButtonStyle
+    );
+
+
+    ui->logoutBtn->setStyleSheet(R"(
+
+        QPushButton {
+            background-color: #10233B;
+
+            color: #FB7185;
+
+            border: 1px solid #71394F;
+            border-radius: 11px;
+
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        QPushButton:hover {
+            background-color: #39202C;
+
+            border-color: #FB7185;
+        }
+
+    )");
     applyCardShadows();
 
     ui->rechargeEdit->setValidator(new QDoubleValidator(0.01, 100000, 2, this));
@@ -52,12 +483,34 @@ PersonalHomePage::PersonalHomePage(UserService &userService, QWidget *parent)
     ui->ordersBtn->setCursor(Qt::PointingHandCursor);
     ui->serviceBtn->setCursor(Qt::PointingHandCursor);
 
-    connect(ui->ordersBtn, &QPushButton::clicked, this, [this]() {
-        QMessageBox::information(this, "我的订单", "订单模块还未接入，目前按钮已经可以正常响应。");
-    });
-    connect(ui->serviceBtn, &QPushButton::clicked, this, [this]() {
-        QMessageBox::information(this, "联系客服", "客服电话：400-000-0000\n（当前为演示功能）");
-    });
+    connect(
+        ui->serviceBtn,
+        &QPushButton::clicked,
+        this,
+        [this]()
+        {
+            showCustomerServiceDialog(this);
+        }
+    );
+
+    connect(
+        ui->ordersBtn,
+        &QPushButton::clicked,
+        this,
+        [this]()
+        {
+            if (m_user.id <= 0) {
+                return;
+            }
+
+            OrderHistoryDialog dialog(
+                m_user.id,
+                this
+            );
+
+            dialog.exec();
+        }
+    );
 }
 
 PersonalHomePage::~PersonalHomePage()

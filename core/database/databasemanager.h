@@ -23,6 +23,8 @@ private:
     QSqlDatabase m_database;
     QString m_databasePath;
     bool configureDatabase();
+    bool upgradeReservationSchema();
+    bool upgradeSettlementSchema();
 };
 
 #endif // DATABASEMANAGER_H

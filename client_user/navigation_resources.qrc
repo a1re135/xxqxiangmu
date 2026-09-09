@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/maps">
+        <file alias="navigation.html">maps/navigation.html</file>
+    </qresource>
+</RCC>

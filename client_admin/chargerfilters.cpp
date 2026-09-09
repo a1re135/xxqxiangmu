@@ -100,6 +100,10 @@ void MainWindow::applyChargerFilters()
     const int statusForButtons = selectedChargerStatus();
     const bool hasSelection = selectedChargerId() > 0;
     m_restartChargerButton->setEnabled(hasSelection && m_restartProgress == nullptr);
+    m_inUseChargerButton->setEnabled(
+        hasSelection &&
+        statusForButtons == 0
+    );
     m_deleteChargerButton->setEnabled(hasSelection && statusForButtons != 1);
     m_faultChargerButton->setEnabled(hasSelection && statusForButtons != 2);
     m_recoverChargerButton->setEnabled(hasSelection && statusForButtons == 2);

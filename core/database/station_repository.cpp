@@ -111,4 +111,64 @@ bool StationRepository::loadStationById(int id, Station *out) const
     return true;
 }
 
+bool StationRepository::loadChargersByStationId(
+    int stationId,
+    QVector<ChargerData> &chargers,
+    QString *errorMessage
+) const
+{
+    chargers.clear();
+
+    if (errorMessage) {
+        errorMessage->clear();
+    }
+
+    QSqlQuery query(m_db);
+
+    query.prepare(QStringLiteral(
+        "SELECT id, charger_no, type, power, status, total_count "
+        "FROM charger "
+        "WHERE station_id = ? "
+        "ORDER BY id"
+    ));
+
+    query.addBindValue(stationId);
+
+    if (!query.exec()) {
+
+        if (errorMessage) {
+            *errorMessage = query.lastError().text();
+        }
+
+        return false;
+    }
+
+    while (query.next()) {
+
+        ChargerData charger;
+
+        charger.id =
+            query.value(0).toInt();
+
+        charger.chargerNo =
+            query.value(1).toString();
+
+        charger.type =
+            query.value(2).toInt();
+
+        charger.power =
+            query.value(3).toDouble();
+
+        charger.status =
+            query.value(4).toInt();
+
+        charger.totalCount =
+            query.value(5).toInt();
+
+        chargers.append(charger);
+    }
+
+    return true;
+}
+
 } // namespace core

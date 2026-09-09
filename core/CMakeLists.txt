@@ -53,6 +53,13 @@ add_library(ncs_core STATIC
     service/geocoder.cpp
     service/geocoder.h
 
+    service/charge_service.cpp
+    service/charge_service.h
+
+    service/charge_service_query.cpp
+    service/charge_service_snapshot.cpp
+    service/charge_service_settlement.cpp
+
     util/geo_util.cpp
     util/geo_util.h
 

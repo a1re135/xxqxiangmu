@@ -108,6 +108,81 @@ bool ChargerService::loadStations(
     return true;
 }
 
+bool ChargerService::setInUse(
+    int chargerId,
+    QString &errorMessage) const
+{
+    errorMessage.clear();
+
+    QSqlDatabase db;
+
+    if (!ensureDatabase(db, errorMessage)) {
+        return false;
+    }
+
+    if (!db.transaction()) {
+        errorMessage =
+            QStringLiteral("无法开启事务：")
+            + db.lastError().text();
+
+        return false;
+    }
+
+    QSqlQuery q(db);
+
+    // Only allow an idle charger to be manually
+    // changed to "in use".
+    q.prepare(
+        "UPDATE charger "
+        "SET status = 1 "
+        "WHERE id = :id "
+        "AND status = 0"
+    );
+
+    q.bindValue(":id", chargerId);
+
+    if (!q.exec()) {
+        errorMessage =
+            QStringLiteral("设置使用中失败：")
+            + q.lastError().text();
+
+        db.rollback();
+        return false;
+    }
+
+    if (q.numRowsAffected() != 1) {
+        errorMessage =
+            QStringLiteral(
+                "只有闲置电桩可以设置为使用中"
+            );
+
+        db.rollback();
+        return false;
+    }
+
+    if (!writeOpsLog(
+            db,
+            QStringLiteral(
+                "手动设置电桩为使用中：#%1"
+            ).arg(chargerId),
+            errorMessage)) {
+
+        db.rollback();
+        return false;
+    }
+
+    if (!db.commit()) {
+        errorMessage =
+            QStringLiteral("提交操作失败：")
+            + db.lastError().text();
+
+        db.rollback();
+        return false;
+    }
+
+    return true;
+}
+
 bool ChargerService::setFault(int chargerId, QString &errorMessage) const
 {
     errorMessage.clear();

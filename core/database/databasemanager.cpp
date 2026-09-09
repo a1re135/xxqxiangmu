@@ -12,6 +12,7 @@
 #include <QDateTime>
 #include <QRandomGenerator>
 #include <QUuid>
+#include <QSet>
 
 DatabaseManager::DatabaseManager()
 {
@@ -702,6 +703,208 @@ bool DatabaseManager::rollbackTransaction()
     return true;
 }
 
+bool DatabaseManager::upgradeReservationSchema()
+{
+    QSqlQuery beginQuery(m_database);
+
+    if (!beginQuery.exec("BEGIN IMMEDIATE")) {
+        qCritical() << "Cannot start reservation migration:"
+                    << beginQuery.lastError().text();
+        return false;
+    }
+
+    auto fail = [&](const QString &message) {
+        m_database.rollback();
+        qCritical() << "Reservation migration failed:"
+                    << message;
+        return false;
+    };
+
+    QSet<QString> columns;
+
+    {
+        QSqlQuery info(m_database);
+
+        if (!info.exec("PRAGMA table_info(charging_order)")) {
+            return fail(info.lastError().text());
+        }
+
+        while (info.next()) {
+            columns.insert(info.value(1).toString());
+        }
+
+        if (info.lastError().isValid()) {
+            return fail(info.lastError().text());
+        }
+    }
+
+    if (columns.isEmpty()) {
+        return fail(
+            QStringLiteral("charging_order 表不存在或无法读取"));
+    }
+
+    QSqlQuery query(m_database);
+
+    if (!columns.contains(QStringLiteral("reserved_at"))) {
+        if (!query.exec(
+                "ALTER TABLE charging_order "
+                "ADD COLUMN reserved_at TEXT")) {
+            return fail(query.lastError().text());
+        }
+    }
+
+    if (!columns.contains(
+            QStringLiteral("reservation_expires_at"))) {
+        if (!query.exec(
+                "ALTER TABLE charging_order "
+                "ADD COLUMN reservation_expires_at TEXT")) {
+            return fail(query.lastError().text());
+        }
+    }
+
+    if (!query.prepare(
+            "UPDATE schema_version "
+            "SET version = :targetVersion "
+            "WHERE version < :targetVersion")) {
+        return fail(query.lastError().text());
+    }
+
+    query.bindValue(":targetVersion", 2);
+
+    if (!query.exec()) {
+        return fail(query.lastError().text());
+    }
+
+    if (!m_database.commit()) {
+        const QString reason = m_database.lastError().text();
+        return fail(reason);
+    }
+
+    qInfo() << "Reservation schema ready.";
+    return true;
+}
+
+bool DatabaseManager::upgradeSettlementSchema()
+{
+    QSqlQuery beginQuery(m_database);
+
+    if (!beginQuery.exec("BEGIN IMMEDIATE")) {
+        qCritical() << "Cannot start settlement migration:"
+                    << beginQuery.lastError().text();
+        return false;
+    }
+
+    auto fail = [&](const QString &message) {
+        m_database.rollback();
+        qCritical() << "Settlement migration failed:"
+                    << message;
+        return false;
+    };
+
+    QSet<QString> columns;
+
+    {
+        QSqlQuery info(m_database);
+
+        if (!info.exec("PRAGMA table_info(charging_order)")) {
+            return fail(info.lastError().text());
+        }
+
+        while (info.next()) {
+            columns.insert(info.value(1).toString());
+        }
+
+        if (info.lastError().isValid()) {
+            return fail(info.lastError().text());
+        }
+    }
+
+    if (columns.isEmpty()) {
+        return fail(
+            QStringLiteral("charging_order 表不存在或无法读取"));
+    }
+
+    struct ColumnMigration
+    {
+        const char *name;
+        const char *sql;
+    };
+
+    const ColumnMigration migrations[] = {
+        {
+            "paid_amount",
+            "ALTER TABLE charging_order "
+            "ADD COLUMN paid_amount REAL"
+        },
+        {
+            "debt_amount",
+            "ALTER TABLE charging_order "
+            "ADD COLUMN debt_amount REAL"
+        },
+        {
+            "balance_after",
+            "ALTER TABLE charging_order "
+            "ADD COLUMN balance_after REAL"
+        },
+        {
+            "unit_price",
+            "ALTER TABLE charging_order "
+            "ADD COLUMN unit_price REAL"
+        },
+        {
+            "power_snapshot",
+            "ALTER TABLE charging_order "
+            "ADD COLUMN power_snapshot REAL"
+        },
+        {
+            "time_scale_snapshot",
+            "ALTER TABLE charging_order "
+            "ADD COLUMN time_scale_snapshot INTEGER"
+        },
+        {
+            "simulated_seconds",
+            "ALTER TABLE charging_order "
+            "ADD COLUMN simulated_seconds INTEGER"
+        }
+    };
+
+    QSqlQuery query(m_database);
+
+    for (const auto &migration : migrations) {
+        const QString name =
+            QString::fromLatin1(migration.name);
+
+        if (columns.contains(name)) {
+            continue;
+        }
+
+        if (!query.exec(QString::fromLatin1(migration.sql))) {
+            return fail(query.lastError().text());
+        }
+    }
+
+    if (!query.prepare(
+            "UPDATE schema_version "
+            "SET version = :target "
+            "WHERE version < :target")) {
+        return fail(query.lastError().text());
+    }
+
+    query.bindValue(":target", 3);
+
+    if (!query.exec()) {
+        return fail(query.lastError().text());
+    }
+
+    if (!m_database.commit()) {
+        const QString reason = m_database.lastError().text();
+        return fail(reason);
+    }
+
+    qInfo() << "Settlement schema ready.";
+    return true;
+}
+
 QSqlDatabase DatabaseManager::connection() const
 {
     return m_database;
@@ -709,11 +912,21 @@ QSqlDatabase DatabaseManager::connection() const
 
 bool DatabaseManager::initialize()
 {
+    Q_INIT_RESOURCE(database_resources);
+
     if (!openDatabase()) {
         return false;
     }
 
     if (!createTables()) {
+        return false;
+    }
+
+    if (!upgradeReservationSchema()) {
+        return false;
+    }
+
+    if (!upgradeSettlementSchema()) {
         return false;
     }
 

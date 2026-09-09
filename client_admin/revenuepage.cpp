@@ -57,7 +57,7 @@ void MainWindow::setupRevenueCharts()
 {
     auto *revenueLayout = new QGridLayout(uiObject<QWidget>(this, QStringLiteral("revenueChartHost")));
     revenueLayout->setContentsMargins(0, 0, 0, 0);
-    revenueLayout->setSpacing(0);
+    revenueLayout->setSpacing(20);
 
     m_revenueChartView = new QChartView(uiObject<QWidget>(this, QStringLiteral("revenueChartHost")));
     m_revenueChartView->setRenderHint(QPainter::Antialiasing);
@@ -77,7 +77,7 @@ void MainWindow::setupRevenueCharts()
 
     auto *orderLayout = new QGridLayout(uiObject<QWidget>(this, QStringLiteral("orderChartHost")));
     orderLayout->setContentsMargins(0, 0, 0, 0);
-    orderLayout->setSpacing(0);
+    orderLayout->setSpacing(20);
 
     m_orderChartView = new QChartView(uiObject<QWidget>(this, QStringLiteral("orderChartHost")));
     m_orderChartView->setRenderHint(QPainter::Antialiasing);

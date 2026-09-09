@@ -2,6 +2,7 @@
 
 #include <QComboBox>
 #include <QHBoxLayout>
+#include <QFrame>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
@@ -9,6 +10,7 @@
 #include <QStyle>
 #include <QTimer>
 #include <QVBoxLayout>
+#include <QListView>
 
 #include "station_card_widget.h"
 
@@ -21,8 +23,91 @@ StationListPage::StationListPage(core::StationService *service, QWidget *parent)
     // ---------- 定位区 ----------
     m_regionCombo = new QComboBox(this);
     m_regionCombo->setObjectName(QStringLiteral("regionCombo"));
-    m_regionCombo->setMinimumWidth(118);
+    m_regionCombo->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
+    m_regionCombo->setMinimumContentsLength(12);
     m_regionCombo->addItems(m_service->presetRegionNames());
+
+    auto *regionView = new QListView(m_regionCombo);
+
+    regionView->setObjectName(
+        QStringLiteral("regionComboPopup")
+    );
+
+    regionView->setFrameShape(QFrame::NoFrame);
+    regionView->setSpacing(0);
+    regionView->setUniformItemSizes(true);
+
+    regionView->setHorizontalScrollBarPolicy(
+        Qt::ScrollBarAlwaysOff
+    );
+
+    regionView->setVerticalScrollMode(
+        QAbstractItemView::ScrollPerPixel
+    );
+
+    regionView->setStyleSheet(R"(
+        QListView {
+            background-color: #0F1A30;
+            color: #F2F5FA;
+
+            border: 1px solid #2A4364;
+            border-radius: 10px;
+
+            padding: 4px;
+            margin: 0px;
+
+            outline: none;
+        }
+
+        QListView::item {
+            background: transparent;
+            color: #DCEBFF;
+
+            min-height: 38px;
+
+            padding-left: 12px;
+            padding-right: 12px;
+
+            border-radius: 7px;
+        }
+
+        QListView::item:hover {
+            background-color: #18385C;
+            color: #FFFFFF;
+        }
+
+        QListView::item:selected {
+            background-color: #2563EB;
+            color: #FFFFFF;
+        }
+
+        QScrollBar:vertical {
+            background: #0F1A30;
+            width: 6px;
+            margin: 0px;
+        }
+
+        QScrollBar::handle:vertical {
+            background: #365478;
+            border-radius: 3px;
+            min-height: 25px;
+        }
+
+        QScrollBar::add-line:vertical,
+        QScrollBar::sub-line:vertical {
+            height: 0px;
+            background: transparent;
+            border: none;
+        }
+
+        QScrollBar::add-page:vertical,
+        QScrollBar::sub-page:vertical {
+            background: transparent;
+        }
+    )");
+
+    m_regionCombo->setView(regionView);
+    m_regionCombo->setMaxVisibleItems(8);
 
     m_addressEdit = new QLineEdit(this);
     m_addressEdit->setObjectName(QStringLiteral("addressEdit"));
@@ -35,7 +120,6 @@ StationListPage::StationListPage(core::StationService *service, QWidget *parent)
 
     auto *locateBar = new QHBoxLayout;
     locateBar->setSpacing(8);
-    locateBar->addWidget(m_regionCombo);
     locateBar->addWidget(m_addressEdit, 1);
     locateBar->addWidget(m_locateBtn);
 
@@ -43,6 +127,7 @@ StationListPage::StationListPage(core::StationService *service, QWidget *parent)
     m_locationLabel = new QLabel(QStringLiteral("尚未定位"), this);
     m_locationLabel->setObjectName(QStringLiteral("locationLabel"));
     m_locationLabel->setTextInteractionFlags(Qt::NoTextInteraction);
+    m_locationLabel->setWordWrap(true);
 
     m_refreshBtn = new QPushButton(QStringLiteral("刷新"), this);
     m_refreshBtn->setObjectName(QStringLiteral("refreshBtn"));
@@ -66,12 +151,13 @@ StationListPage::StationListPage(core::StationService *service, QWidget *parent)
 
     // ---------- 电站卡片滚动区 ----------
     m_cardsContainer = new QWidget(this);
+    m_cardsContainer->setObjectName(QStringLiteral("cardsContainer"));
     m_outerLayout = new QVBoxLayout(m_cardsContainer);
-    m_outerLayout->setContentsMargins(10, 6, 10, 10);
+    m_outerLayout->setContentsMargins(0, 4, 6, 8);
     m_outerLayout->setSpacing(0);
 
     m_cardsLayout = new QVBoxLayout;
-    m_cardsLayout->setSpacing(8);
+    m_cardsLayout->setSpacing(12);
     m_cardsLayout->addStretch(1);
     m_outerLayout->addLayout(m_cardsLayout, 1);
 
@@ -85,32 +171,34 @@ StationListPage::StationListPage(core::StationService *service, QWidget *parent)
     m_scrollArea = new QScrollArea(this);
     m_scrollArea->setObjectName(QStringLiteral("cardScrollArea"));
     m_scrollArea->setWidgetResizable(true);
+    m_scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     m_scrollArea->setFrameShape(QFrame::NoFrame);
     m_scrollArea->setWidget(m_cardsContainer);
 
-    auto *backBtn = new QPushButton(QStringLiteral("← 返回首页"), this);
-    backBtn->setObjectName(QStringLiteral("backBtn"));
-    backBtn->setCursor(Qt::PointingHandCursor);
-    backBtn->setMinimumHeight(36);
-
-    connect(
-        backBtn,
-        &QPushButton::clicked,
-        this,
-        [this]() {
-            emit backToHomeRequested();
-        }
-    );
+    auto *title = new QLabel(QStringLiteral("附近充电站"), this);
+    title->setObjectName(QStringLiteral("pageTitle"));
+    auto *subtitle = new QLabel(QStringLiteral("发现身边电站，让每次出发都满电"), this);
+    subtitle->setObjectName(QStringLiteral("pageSubtitle"));
+    auto *locationPanel = new QFrame(this);
+    locationPanel->setObjectName(QStringLiteral("locationPanel"));
+    auto *locationLayout = new QVBoxLayout(locationPanel);
+    locationLayout->setContentsMargins(14, 14, 14, 12);
+    locationLayout->setSpacing(10);
+    locationLayout->addWidget(m_regionCombo);
+    locationLayout->addLayout(locateBar);
+    locationLayout->addLayout(infoBar);
+    auto *section = new QLabel(QStringLiteral("电站列表 · 距离优先"), this);
+    section->setObjectName(QStringLiteral("sectionTitle"));
 
     auto *pageLayout = new QVBoxLayout(this);
-
-    pageLayout->setContentsMargins(12, 12, 12, 8);
-    pageLayout->setSpacing(8);
-
-    pageLayout->addWidget(backBtn, 0, Qt::AlignLeft);
-    pageLayout->addLayout(locateBar);
-    pageLayout->addLayout(infoBar);
+    pageLayout->setContentsMargins(20, 4, 20, 0);
+    pageLayout->setSpacing(10);
+    pageLayout->addWidget(title);
+    pageLayout->addWidget(subtitle);
+    pageLayout->addSpacing(4);
+    pageLayout->addWidget(locationPanel);
     pageLayout->addWidget(m_toastLabel);
+    pageLayout->addWidget(section);
     pageLayout->addWidget(m_scrollArea, 1);
 
     // ---------- 信号 ----------
@@ -218,6 +306,15 @@ void StationListPage::rebuildList(const QVector<core::StationListItem> &items)
         // 卡片点击 → 转发完整卡片信息（电站详情页为 UC-U-03 范畴，由主窗口处理）
         connect(card, &StationCardWidget::clicked, this,
                 [this, item](int) { emit stationClicked(item); });
+        connect(
+            card,
+            &StationCardWidget::navigationRequested,
+            this,
+            [this, item](int)
+            {
+                emit navigationRequested(item);
+            }
+        );
         m_cardsLayout->insertWidget(m_cardsLayout->count() - 1, card);
     }
 }

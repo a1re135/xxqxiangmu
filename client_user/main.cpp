@@ -39,19 +39,10 @@ int main(int argc, char *argv[])
     // =========================================================
     LoginWindow loginWindow;
 
-    MainWindow mainWindow;
+    MainWindow mainWindow(&stationService);
 
     PersonalHomePage personalPage(
         loginWindow.userService()
-    );
-
-    client_user::StationListPage stationPage(
-        &stationService
-    );
-
-    stationPage.setFixedSize(420, 760);
-    stationPage.setWindowTitle(
-        QStringLiteral("附近充电站")
     );
 
     UserInfo currentUser;
@@ -79,7 +70,6 @@ int main(int argc, char *argv[])
 
         loginWindow.hide();
         personalPage.hide();
-        stationPage.hide();
 
         mainWindow.show();
         mainWindow.raise();
@@ -100,9 +90,8 @@ int main(int argc, char *argv[])
             mainWindow.setCurrentUser(currentUser);
             personalPage.setUser(currentUser);
 
-            loginWindow.hide();
+            mainWindow.hide();
             personalPage.hide();
-            stationPage.hide();
 
             // IMPORTANT:
             // After login we now go to MainWindow,
@@ -110,35 +99,6 @@ int main(int argc, char *argv[])
             mainWindow.show();
             mainWindow.raise();
             mainWindow.activateWindow();
-        }
-    );
-
-    // =========================================================
-    // HOME → JIAQI'S STATION PAGE
-    // =========================================================
-    QObject::connect(
-        &mainWindow,
-        &MainWindow::stationListRequested,
-
-        [&]() {
-
-            mainWindow.hide();
-
-            stationPage.show();
-            stationPage.raise();
-            stationPage.activateWindow();
-        }
-    );
-
-    // =========================================================
-    // STATION PAGE → HOME
-    // =========================================================
-    QObject::connect(
-        &stationPage,
-        &client_user::StationListPage::backToHomeRequested,
-
-        [&]() {
-            showMainWindow();
         }
     );
 
@@ -192,7 +152,6 @@ int main(int argc, char *argv[])
 
         mainWindow.hide();
         personalPage.hide();
-        stationPage.hide();
 
         currentUser = UserInfo{};
 
@@ -204,12 +163,6 @@ int main(int argc, char *argv[])
     QObject::connect(
         &personalPage,
         &PersonalHomePage::logoutRequested,
-        returnToLogin
-    );
-
-    QObject::connect(
-        &mainWindow,
-        &MainWindow::logoutRequested,
         returnToLogin
     );
 

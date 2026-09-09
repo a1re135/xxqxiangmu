@@ -32,8 +32,8 @@ public:
     void refresh();
 
 signals:
-    void backToHomeRequested();
     void stationClicked(const core::StationListItem &item);
+    void navigationRequested(const core::StationListItem &item);
 
 protected:
     void showEvent(QShowEvent *event) override;
