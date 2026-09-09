@@ -29,6 +29,7 @@ public:
     bool loadChargers(QList<ChargerRecord> &out, QString &errorMessage) const;
     bool loadStations(QList<StationOption> &out, QString &errorMessage) const;
 
+    bool setInUse(int chargerId, QString &errorMessage) const;
     bool setFault(int chargerId, QString &errorMessage) const;
     bool recover(int chargerId, QString &errorMessage) const;
 

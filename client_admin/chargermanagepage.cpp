@@ -39,6 +39,7 @@
 #include <QLayout>
 #include <QLayoutItem>
 #include <QLineEdit>
+#include <QListView>
 #include <QMessageBox>
 #include <QModelIndex>
 #include <QProgressBar>
@@ -52,6 +53,121 @@
 #include <QTableWidgetItem>
 #include <QTimer>
 #include <QVBoxLayout>
+
+static void styleAdminCombo(QComboBox *combo)
+{
+    if (!combo) {
+        return;
+    }
+
+    auto *view = new QListView(combo);
+    view->setFrameShape(QFrame::NoFrame);
+    view->setSpacing(2);
+    view->setUniformItemSizes(true);
+    view->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+
+    combo->setView(view);
+    combo->setMaxVisibleItems(8);
+
+    // style the closed combo box
+    combo->setStyleSheet(R"(
+
+        QComboBox {
+            background-color: #10233B;
+            color: #EAF3FF;
+            border: 1px solid #294B6D;
+            border-radius: 10px;
+            padding: 8px 12px;
+            min-height: 24px;
+        }
+
+        QComboBox:hover {
+            border-color: #60A5FA;
+        }
+
+        QComboBox:focus {
+            border: 1px solid #60A5FA;
+            color: #FFFFFF;
+        }
+
+        QComboBox::drop-down {
+            border: none;
+            width: 28px;
+            background: transparent;
+        }
+
+        QComboBox::down-arrow {
+            image: none;
+            width: 0px;
+            height: 0px;
+        }
+
+    )");
+
+    // style the popup list itself
+    view->setStyleSheet(R"(
+
+        QListView {
+            background-color: #0E1D32;
+            color: #EAF3FF;
+            border: 1px solid #315A82;
+            border-radius: 8px;
+            outline: none;
+            padding: 4px;
+        }
+
+        QListView::item {
+            background-color: #0E1D32;
+            color: #EAF3FF;
+            min-height: 30px;
+            padding: 6px 10px;
+            border: none;
+        }
+
+        QListView::item:hover {
+            background-color: #173656;
+            color: #FFFFFF;
+        }
+
+        QListView::item:selected {
+            background-color: #2B6CB0;
+            color: #FFFFFF;
+        }
+
+        QScrollBar:vertical {
+            background: #0E1D32;
+            width: 8px;
+            margin: 2px;
+            border: none;
+        }
+
+        QScrollBar::handle:vertical {
+            background: #3B5F92;
+            border-radius: 4px;
+            min-height: 24px;
+        }
+
+        QScrollBar::add-line:vertical,
+        QScrollBar::sub-line:vertical {
+            height: 0px;
+            border: none;
+            background: transparent;
+        }
+
+        QScrollBar::add-page:vertical,
+        QScrollBar::sub-page:vertical {
+            background: transparent;
+        }
+
+    )");
+
+    QPalette pal = view->palette();
+    pal.setColor(QPalette::Base, QColor("#0E1D32"));
+    pal.setColor(QPalette::Text, QColor("#EAF3FF"));
+    pal.setColor(QPalette::Highlight, QColor("#2B6CB0"));
+    pal.setColor(QPalette::HighlightedText, QColor("#FFFFFF"));
+    view->setPalette(pal);
+}
 
 void MainWindow::setupChargerManagement()
 {
@@ -133,6 +249,29 @@ void MainWindow::setupChargerManagement()
     auto *searchLabel = new QLabel(QStringLiteral("编号"), filterCard);
     searchLabel->setStyleSheet(QStringLiteral("QLabel { color:#93A4AE; font-size:14px; font-weight:800; }"));
     m_chargerSearch = new QLineEdit(filterCard);
+
+    m_chargerSearch->setStyleSheet(R"(
+
+        QLineEdit {
+            background-color: #10233B;
+            color: #EAF3FF;
+            border: 1px solid #294B6D;
+            border-radius: 10px;
+            padding: 8px 12px;
+            selection-background-color: #2563EB;
+            selection-color: #FFFFFF;
+        }
+
+        QLineEdit:focus {
+            border: 1px solid #60A5FA;
+            color: #FFFFFF;
+        }
+
+        QLineEdit::placeholder {
+            color: #7E93AE;
+        }
+
+    )");
     m_chargerSearch->setObjectName(QStringLiteral("chargerSearch"));
     m_chargerSearch->setPlaceholderText(QStringLiteral("搜索电桩编号"));
     m_chargerSearch->setClearButtonEnabled(true);
@@ -220,6 +359,30 @@ void MainWindow::setupChargerManagement()
             "border-radius:9px; padding:0 18px; font-size:14px; font-weight:850; }"
             "QPushButton:hover { background:#1B4B45; }"
             "QPushButton:disabled { color:#566B70; background:#17232C; border-color:#26343C; }"));
+    m_inUseChargerButton = makeButton(
+        QStringLiteral("设为使用中"),
+        QStringLiteral(
+            "QPushButton { "
+            "background:#24355A; "
+            "color:#93C5FD; "
+            "border:1px solid #3B5F92; "
+            "border-radius:9px; "
+            "padding:0 18px; "
+            "font-size:14px; "
+            "font-weight:850; "
+            "}"
+
+            "QPushButton:hover { "
+            "background:#2D4575; "
+            "}"
+
+            "QPushButton:disabled { "
+            "color:#566B70; "
+            "background:#17232C; "
+            "border-color:#26343C; "
+            "}"
+        )
+    );
     m_faultChargerButton = makeButton(
         QStringLiteral("标记故障"),
         QStringLiteral(
@@ -249,6 +412,7 @@ void MainWindow::setupChargerManagement()
             "QPushButton:disabled { color:#59656F; background:#1A222C; border-color:#27313D; }"));
 
     actionLayout->addWidget(m_restartChargerButton);
+    actionLayout->addWidget(m_inUseChargerButton);
     actionLayout->addWidget(m_faultChargerButton);
     actionLayout->addWidget(m_recoverChargerButton);
     actionLayout->addSpacing(8);
@@ -263,14 +427,41 @@ void MainWindow::setupChargerManagement()
 
     rootLayout->addWidget(actionCard);
 
-    m_stationFilter->addItem(QStringLiteral("全部电站"), -1);
-    m_statusFilter->addItem(QStringLiteral("全部状态"), -1);
-    m_statusFilter->addItem(QStringLiteral("闲置"), 0);
-    m_statusFilter->addItem(QStringLiteral("在用"), 1);
-    m_statusFilter->addItem(QStringLiteral("故障"), 2);
+    m_stationFilter->addItem(
+        QStringLiteral("全部电站"),
+        -1
+    );
 
-    connect(m_stationFilter, qOverload<int>(&QComboBox::currentIndexChanged),
-            this, &MainWindow::applyChargerFilters);
+    m_statusFilter->addItem(
+        QStringLiteral("全部状态"),
+        -1
+    );
+
+    m_statusFilter->addItem(
+        QStringLiteral("闲置"),
+        0
+    );
+
+    m_statusFilter->addItem(
+        QStringLiteral("在用"),
+        1
+    );
+
+    m_statusFilter->addItem(
+        QStringLiteral("故障"),
+        2
+    );
+
+    // ADD THESE TWO LINES HERE
+    styleAdminCombo(m_stationFilter);
+    styleAdminCombo(m_statusFilter);
+
+    connect(
+        m_stationFilter,
+        qOverload<int>(&QComboBox::currentIndexChanged),
+        this,
+        &MainWindow::applyChargerFilters
+    );
     connect(m_statusFilter, qOverload<int>(&QComboBox::currentIndexChanged),
             this, &MainWindow::applyChargerFilters);
     connect(m_chargerSearch, &QLineEdit::textChanged,
@@ -281,6 +472,9 @@ void MainWindow::setupChargerManagement()
         const int status = selectedChargerStatus();
         const bool hasSelection = selectedChargerId() > 0;
         m_restartChargerButton->setEnabled(hasSelection && m_restartProgress == nullptr);
+        m_inUseChargerButton->setEnabled(
+            hasSelection && status == 0
+        );
         m_deleteChargerButton->setEnabled(hasSelection && status != 1);
         m_faultChargerButton->setEnabled(hasSelection && status != 2);
         m_recoverChargerButton->setEnabled(hasSelection && status == 2);
@@ -288,6 +482,12 @@ void MainWindow::setupChargerManagement()
 
     connect(m_restartChargerButton, &QPushButton::clicked,
             this, &MainWindow::restartSelectedCharger);
+    connect(
+        m_inUseChargerButton,
+        &QPushButton::clicked,
+        this,
+        &MainWindow::setSelectedChargerInUse
+    );
     connect(m_faultChargerButton, &QPushButton::clicked,
             this, &MainWindow::setSelectedChargerFault);
     connect(m_recoverChargerButton, &QPushButton::clicked,

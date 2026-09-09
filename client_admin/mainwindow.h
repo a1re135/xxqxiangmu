@@ -80,6 +80,7 @@ private:
     int selectedChargerStatus() const;
     void restartSelectedCharger();
     void setSelectedChargerFault();
+    void setSelectedChargerInUse();
     void recoverSelectedCharger();
     void addNewCharger();
     void deleteSelectedCharger();
@@ -118,6 +119,7 @@ private:
     QTableView *m_chargerTable = nullptr;
     QStandardItemModel *m_chargerModel = nullptr;
     QPushButton *m_restartChargerButton = nullptr;
+    QPushButton *m_inUseChargerButton = nullptr;
     QPushButton *m_faultChargerButton = nullptr;
     QPushButton *m_recoverChargerButton = nullptr;
     QPushButton *m_addChargerButton = nullptr;

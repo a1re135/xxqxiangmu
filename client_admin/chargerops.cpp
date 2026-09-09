@@ -56,93 +56,169 @@
 void MainWindow::restartSelectedCharger()
 {
     const int id = selectedChargerId();
+
     if (id <= 0) {
-        QMessageBox::information(this, QStringLiteral("远程重启"),
-                                 QStringLiteral("请先选择一个电桩。"));
+        QMessageBox::information(
+            this,
+            QStringLiteral("远程重启"),
+            QStringLiteral("请先选择一个电桩。")
+        );
         return;
     }
 
     const int status = selectedChargerStatus();
+
+    QString message;
     if (status == 1) {
-        const auto result = QMessageBox::warning(
-            this,
-            QStringLiteral("确认远程重启"),
-            QStringLiteral("该电桩正在充电，重启会中断用户充电。\n确定要继续吗？"),
-            QMessageBox::Yes | QMessageBox::No,
-            QMessageBox::No);
-        if (result != QMessageBox::Yes) return;
-    } else if (status == 2) {
-        const auto result = QMessageBox::question(
-            this,
-            QStringLiteral("确认远程重启"),
-            QStringLiteral("该电桩当前为故障状态。\n模拟下发重启指令并在 2 秒后恢复为空闲吗？"),
-            QMessageBox::Yes | QMessageBox::No,
-            QMessageBox::Yes);
-        if (result != QMessageBox::Yes) return;
+        message = QStringLiteral(
+            "该电桩正在充电，重启会中断用户充电。\n\n确定要继续吗？"
+        );
     } else {
-        const auto result = QMessageBox::question(
-            this,
-            QStringLiteral("确认远程重启"),
-            QStringLiteral("模拟下发远程重启指令，完成后该电桩将回到闲置状态。继续吗？"),
-            QMessageBox::Yes | QMessageBox::No,
-            QMessageBox::No);
-        if (result != QMessageBox::Yes) return;
+        message = QStringLiteral(
+            "确定要远程重启当前电桩吗？"
+        );
     }
 
-    m_restartChargerId = id;
-    m_restartProgress = new QProgressDialog(
-        QStringLiteral("正在下发远程重启指令…"),
-        QStringLiteral("取消"),
-        0, 100,
-        this);
-    m_restartProgress->setWindowTitle(QStringLiteral("远程重启"));
-    m_restartProgress->setWindowModality(Qt::WindowModal);
-    m_restartProgress->setAutoClose(false);
-    m_restartProgress->setAutoReset(false);
-    m_restartProgress->setValue(0);
-    m_restartProgress->setStyleSheet(QStringLiteral(
-        "QProgressDialog { background:#121D30; color:#EAF0F3; }"
-        "QLabel { color:#EAF0F3; font-size:14px; font-weight:800; }"
-        "QProgressBar { background:#1B2736; border:1px solid #334255; border-radius:8px; "
-        "height:16px; text-align:center; color:#EAF0F3; }"
-        "QProgressBar::chunk { background:#10B981; border-radius:7px; }"));
-    m_restartProgress->show();
+    QMessageBox confirmBox(this);
+    confirmBox.setIcon(QMessageBox::Warning);
+    confirmBox.setWindowTitle(QStringLiteral("确认远程重启"));
+    confirmBox.setText(message);
+    confirmBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+    confirmBox.setDefaultButton(QMessageBox::No);
 
-    auto *timer = new QTimer(m_restartProgress);
-    timer->setInterval(100);
-    connect(timer, &QTimer::timeout, this, [this, timer]() {
-        if (!m_restartProgress) return;
+    confirmBox.setStyleSheet(R"(
 
-        const int next = qMin(100, m_restartProgress->value() + 5);
-        m_restartProgress->setValue(next);
-
-        if (next >= 100) {
-            timer->stop();
-
-            QString errorMessage;
-            const bool ok = m_chargerService.restartCharger(m_restartChargerId, errorMessage);
-            const QString detail = ok
-                ? QStringLiteral("远程重启完成，电桩状态已恢复为闲置。")
-                : QStringLiteral("远程重启失败：%1").arg(errorMessage);
-
-            m_restartProgress->close();
-            m_restartProgress->deleteLater();
-            m_restartProgress = nullptr;
-            const int restartedId = m_restartChargerId;
-            m_restartChargerId = 0;
-
-            if (!ok) {
-                QMessageBox::warning(this, QStringLiteral("远程重启"), detail);
-            } else {
-                refreshChargerManagement();
-                QMessageBox::information(this, QStringLiteral("远程重启"), detail);
-            }
-
-            Q_UNUSED(restartedId);
+        QMessageBox {
+            background-color: #08111F;
         }
-    });
+
+        QMessageBox QLabel {
+            color: #EAF3FF;
+            font-size: 13px;
+        }
+
+        QPushButton {
+            min-width: 90px;
+            min-height: 34px;
+            background-color: #10233B;
+            color: #DCEBFF;
+            border: 1px solid #315A82;
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-weight: 600;
+        }
+
+        QPushButton:hover {
+            background-color: #173656;
+            border-color: #60A5FA;
+        }
+
+    )");
+
+    if (confirmBox.exec() != QMessageBox::Yes) {
+        return;
+    }
+
+    QString errorMessage;
+    if (!m_chargerService.restartCharger(id, errorMessage)) {
+        QMessageBox errorBox(this);
+        errorBox.setIcon(QMessageBox::Critical);
+        errorBox.setWindowTitle(QStringLiteral("远程重启失败"));
+        errorBox.setText(errorMessage);
+        errorBox.setStandardButtons(QMessageBox::Ok);
+        errorBox.setStyleSheet(confirmBox.styleSheet());
+        errorBox.exec();
+        return;
+    }
+
+    refreshChargerManagement();
+    refreshChargerStatusOverview();
+
+    QMessageBox okBox(this);
+    okBox.setIcon(QMessageBox::Information);
+    okBox.setWindowTitle(QStringLiteral("远程重启成功"));
+    okBox.setText(QStringLiteral("电桩已恢复为空闲状态。"));
+    okBox.setStandardButtons(QMessageBox::Ok);
+    okBox.setStyleSheet(confirmBox.styleSheet());
+    okBox.exec();
 }
 
+void MainWindow::setSelectedChargerInUse()
+{
+    const int id = selectedChargerId();
+
+    if (id <= 0) {
+        QMessageBox::information(
+            this,
+            QStringLiteral("设为使用中"),
+            QStringLiteral(
+                "请先选择一个电桩。"
+            )
+        );
+
+        return;
+    }
+
+    const int status =
+        selectedChargerStatus();
+
+    if (status != 0) {
+        QMessageBox::information(
+            this,
+            QStringLiteral("设为使用中"),
+            QStringLiteral(
+                "只有闲置电桩可以设置为使用中。"
+            )
+        );
+
+        return;
+    }
+
+    const auto result =
+        QMessageBox::question(
+            this,
+            QStringLiteral("确认状态变更"),
+            QStringLiteral(
+                "确定将当前电桩设置为"
+                "“使用中”状态吗？\n\n"
+                "此操作用于管理员模拟"
+                "电桩正在使用。"
+            ),
+            QMessageBox::Yes |
+            QMessageBox::No,
+            QMessageBox::No
+        );
+
+    if (result != QMessageBox::Yes) {
+        return;
+    }
+
+    QString errorMessage;
+
+    if (!m_chargerService.setInUse(
+            id,
+            errorMessage)) {
+
+        QMessageBox::warning(
+            this,
+            QStringLiteral("设为使用中"),
+            errorMessage
+        );
+
+        return;
+    }
+
+    refreshChargerManagement();
+    refreshChargerStatusOverview();
+
+    QMessageBox::information(
+        this,
+        QStringLiteral("状态已更新"),
+        QStringLiteral(
+            "电桩已设置为使用中。"
+        )
+    );
+}
 
 void MainWindow::setSelectedChargerFault()
 {

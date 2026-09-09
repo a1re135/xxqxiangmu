@@ -153,17 +153,55 @@ void MainWindow::setupChargerStatusOverview()
     m_statusTable->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
     m_statusTable->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
     m_statusTable->horizontalHeader()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
+    m_statusTable->horizontalHeader()->setDefaultAlignment(Qt::AlignCenter);
+    m_statusTable->verticalHeader()->setVisible(false);
+    m_statusTable->setAlternatingRowColors(true);
+    m_statusTable->setShowGrid(false);
+    m_statusTable->setFocusPolicy(Qt::NoFocus);
     m_statusTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_statusTable->setSelectionMode(QAbstractItemView::NoSelection);
     m_statusTable->setFocusPolicy(Qt::NoFocus);
     m_statusTable->setShowGrid(false);
     m_statusTable->setAlternatingRowColors(false);
-    m_statusTable->setStyleSheet(QStringLiteral(
-        "QTableWidget { background:#101A2B; border:1px solid #27394D; border-radius:11px; "
-        "color:#E8EEF2; font-size:15px; font-weight:650; gridline-color:transparent; }"
-        "QHeaderView::section { background:#1A2739; color:#8FA1AC; padding:11px 10px; "
-        "border:none; font-size:13px; font-weight:800; }"
-        "QTableWidget::item { padding:9px 10px; border-bottom:1px solid #1D2B3C; }"));
+    m_statusTable->setStyleSheet(R"(
+
+        QTableWidget {
+            background-color: #0D1B2D;
+            color: #EAF3FF;
+            border: 1px solid #294B6D;
+            border-radius: 12px;
+            gridline-color: #1E3650;
+            alternate-background-color: #10233B;
+            font-size: 12px;
+        }
+
+        QTableWidget::item {
+            padding: 6px;
+            border-bottom: 1px solid #1E3650;
+        }
+
+        QTableWidget::item:selected {
+            background-color: #173656;
+            color: #FFFFFF;
+        }
+
+        QHeaderView::section {
+            background-color: #173656;
+            color: #9FD0FF;
+            border: none;
+            border-right: 1px solid #294B6D;
+            border-bottom: 1px solid #294B6D;
+            padding: 8px 6px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        QTableCornerButton::section {
+            background-color: #173656;
+            border: none;
+        }
+
+    )");
     m_statusTable->setRowHeight(0, 54);
     m_statusTable->setRowHeight(1, 54);
     m_statusTable->setRowHeight(2, 54);
