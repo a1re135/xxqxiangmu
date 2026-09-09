@@ -20,6 +20,12 @@ find_package(
     COMPONENTS WebEngineWidgets
 )
 
+find_package(
+    Qt${QT_VERSION_MAJOR}
+    QUIET
+    COMPONENTS Multimedia MultimediaWidgets
+)
+
 set(PROJECT_SOURCES
     main.cpp
 
@@ -74,6 +80,45 @@ target_link_libraries(client_user
     Qt${QT_VERSION_MAJOR}::Widgets
     ncs_core
 )
+
+if(
+    QT_VERSION_MAJOR EQUAL 6
+    AND TARGET Qt6::Multimedia
+    AND TARGET Qt6::MultimediaWidgets
+)
+    target_sources(
+        client_user
+        PRIVATE
+            avatarcapturedialog.cpp
+            avatarcapturedialog.h
+    )
+
+    target_link_libraries(
+        client_user
+        PRIVATE
+            Qt6::Multimedia
+            Qt6::MultimediaWidgets
+    )
+
+    target_compile_definitions(
+        client_user
+        PRIVATE
+            NCS_HAS_CAMERA=1
+    )
+
+    message(STATUS "NCS camera support: ENABLED")
+
+else()
+
+    target_compile_definitions(
+        client_user
+        PRIVATE
+            NCS_HAS_CAMERA=0
+    )
+
+    message(STATUS "NCS camera support: DISABLED")
+
+endif()
 
 if(TARGET Qt${QT_VERSION_MAJOR}::WebEngineWidgets)
     target_link_libraries(

@@ -18,91 +18,516 @@ StationCardWidget::StationCardWidget(const core::StationListItem &item,
 
 void StationCardWidget::setupUi()
 {
-    setObjectName(QStringLiteral("stationCard"));
-    setCursor(Qt::PointingHandCursor);
-    setMinimumHeight(120);
-    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
+    // ============================================================
+    // Card
+    // ============================================================
 
-    auto *nameLabel = new QLabel(m_item.name, this);
-    nameLabel->setObjectName(QStringLiteral("stationName"));
-    nameLabel->setWordWrap(true);
-    nameLabel->setTextFormat(Qt::PlainText);
-
-    // 使用按钮显示距离，让它单独接收点击。
-    auto *distLabel = new QPushButton(
-        QStringLiteral("%1 km  ›")
-            .arg(m_item.distanceKm, 0, 'f', 1),
-        this
+    setObjectName(
+        QStringLiteral("stationCard")
     );
 
-    distLabel->setObjectName(QStringLiteral("distanceButton"));
-    distLabel->setCursor(Qt::PointingHandCursor);
-    distLabel->setToolTip(QStringLiteral("点击查看前往该站的路线"));
+    setCursor(
+        Qt::PointingHandCursor
+    );
 
-    distLabel->setStyleSheet(R"(
-        QPushButton {
-            background-color: #142C46;
-            color: #7DD3FC;
-            border: 1px solid #264B70;
-            border-radius: 8px;
-            padding: 5px 8px;
-            min-height: 20px;
-            font-size: 12px;
-            font-weight: bold;
-        }
+    // The original card was only 120px high.
+    // We now have an extra AI prediction row.
+    setMinimumHeight(
+        m_item.hasPrediction
+            ? 155
+            : 125
+    );
 
-        QPushButton:hover {
-            background-color: #1E4065;
-            border-color: #60A5FA;
-        }
+    setSizePolicy(
+        QSizePolicy::Expanding,
+        QSizePolicy::Minimum
+    );
 
-        QPushButton:pressed {
-            background-color: #28558A;
-        }
-    )");
+
+    // ============================================================
+    // Station name
+    // ============================================================
+
+    auto *nameLabel =
+        new QLabel(
+            m_item.name,
+            this
+        );
+
+    nameLabel->setObjectName(
+        QStringLiteral(
+            "stationName"
+        )
+    );
+
+    nameLabel->setTextFormat(
+        Qt::PlainText
+    );
+
+    nameLabel->setWordWrap(true);
+
+    nameLabel->setStyleSheet(
+        QStringLiteral(R"(
+            QLabel {
+                color:#F5F7FA;
+                font-size:15px;
+                font-weight:800;
+                background:transparent;
+                border:none;
+            }
+        )")
+    );
+
+
+    // ============================================================
+    // AI recommended badge
+    // ============================================================
+
+    QLabel *recommendBadge =
+        nullptr;
+
+    if (m_item.recommended) {
+
+        recommendBadge =
+            new QLabel(
+                QStringLiteral(
+                    "AI推荐"
+                ),
+                this
+            );
+
+        recommendBadge
+            ->setAlignment(
+                Qt::AlignCenter
+            );
+
+        recommendBadge
+            ->setFixedHeight(28);
+
+        recommendBadge
+            ->setStyleSheet(
+                QStringLiteral(R"(
+                    QLabel {
+                        background:#123F37;
+                        color:#34D399;
+
+                        border:1px solid #1F806A;
+                        border-radius:7px;
+
+                        padding:0px 9px;
+
+                        font-size:11px;
+                        font-weight:800;
+                    }
+                )")
+            );
+    }
+
+
+    // ============================================================
+    // Distance button
+    // ============================================================
+
+    auto *distanceButton =
+        new QPushButton(
+            QStringLiteral(
+                "%1 km  ›"
+            ).arg(
+                m_item.distanceKm,
+                0,
+                'f',
+                1
+            ),
+            this
+        );
+
+    distanceButton->setObjectName(
+        QStringLiteral(
+            "distanceButton"
+        )
+    );
+
+    distanceButton->setCursor(
+        Qt::PointingHandCursor
+    );
+
+    distanceButton->setToolTip(
+        QStringLiteral(
+            "点击查看前往该站的路线"
+        )
+    );
+
+    distanceButton->setFixedHeight(
+        32
+    );
+
+    distanceButton->setStyleSheet(
+        QStringLiteral(R"(
+            QPushButton {
+                background:#142C46;
+                color:#7DD3FC;
+
+                border:1px solid #264B70;
+                border-radius:8px;
+
+                padding:4px 9px;
+
+                font-size:12px;
+                font-weight:700;
+            }
+
+            QPushButton:hover {
+                background:#1E4065;
+                border-color:#60A5FA;
+                color:#FFFFFF;
+            }
+
+            QPushButton:pressed {
+                background:#28558A;
+            }
+        )")
+    );
+
 
     connect(
-        distLabel,
+        distanceButton,
         &QPushButton::clicked,
         this,
         [this]()
         {
-            emit navigationRequested(m_item.id);
+            emit navigationRequested(
+                m_item.id
+            );
         }
     );
 
-    auto *addressLabel = new QLabel(m_item.address, this);
-    addressLabel->setObjectName(QStringLiteral("stationAddress"));
-    addressLabel->setWordWrap(true);
-    addressLabel->setTextFormat(Qt::PlainText);
-    addressLabel->setTextInteractionFlags(Qt::NoTextInteraction);
+
+    // ============================================================
+    // Top row
+    //
+    // Station name        AI推荐      distance
+    // ============================================================
+
+    auto *topRow =
+        new QHBoxLayout;
+
+    topRow->setContentsMargins(
+        0, 0, 0, 0
+    );
+
+    topRow->setSpacing(8);
+
+    topRow->addWidget(
+        nameLabel,
+        1
+    );
+
+    if (recommendBadge) {
+        topRow->addWidget(
+            recommendBadge,
+            0,
+            Qt::AlignTop
+        );
+    }
+
+    topRow->addWidget(
+        distanceButton,
+        0,
+        Qt::AlignTop
+    );
+
+
+    // ============================================================
+    // Address
+    // ============================================================
+
+    auto *addressLabel =
+        new QLabel(
+            m_item.address,
+            this
+        );
+
+    addressLabel->setObjectName(
+        QStringLiteral(
+            "stationAddress"
+        )
+    );
+
+    addressLabel->setTextFormat(
+        Qt::PlainText
+    );
+
+    addressLabel->setWordWrap(false);
+
+    addressLabel->setStyleSheet(
+        QStringLiteral(R"(
+            QLabel {
+                color:#7F95AC;
+                background:transparent;
+                border:none;
+
+                font-size:11px;
+                font-weight:500;
+            }
+        )")
+    );
+
+
+    // ============================================================
+    // AI prediction
+    // ============================================================
+
+    QLabel *predictionInfoLabel =
+        nullptr;
+
+    if (m_item.hasPrediction) {
+
+        QString predictionText =
+            QStringLiteral(
+                "AI预测  ·  空闲 %1/%2"
+                "  ·  负荷 %3 kWh"
+            )
+                .arg(
+                    m_item
+                        .predictedFreeChargers
+                )
+                .arg(
+                    m_item.totalChargers
+                )
+                .arg(
+                    m_item.predictedLoad,
+                    0,
+                    'f',
+                    2
+                );
+
+
+        if (m_item.predictedPeak) {
+            predictionText +=
+                QStringLiteral(
+                    "  ·  高峰预警"
+                );
+        }
+
+
+        predictionInfoLabel =
+            new QLabel(
+                predictionText,
+                this
+            );
+
+        predictionInfoLabel
+            ->setTextFormat(
+                Qt::PlainText
+            );
+
+        predictionInfoLabel
+            ->setWordWrap(false);
+
+
+        if (m_item.predictedPeak) {
+
+            predictionInfoLabel
+                ->setStyleSheet(
+                    QStringLiteral(R"(
+                        QLabel {
+                            color:#F87171;
+                            background:transparent;
+                            border:none;
+
+                            font-size:11px;
+                            font-weight:700;
+                        }
+                    )")
+                );
+
+        } else {
+
+            predictionInfoLabel
+                ->setStyleSheet(
+                    QStringLiteral(R"(
+                        QLabel {
+                            color:#34D399;
+                            background:transparent;
+                            border:none;
+
+                            font-size:11px;
+                            font-weight:700;
+                        }
+                    )")
+                );
+        }
+    }
+
+
+    // ============================================================
+    // Price
+    // ============================================================
 
     auto *priceLabel =
-        new QLabel(QStringLiteral("%1 元/度").arg(m_item.price, 0, 'f', 2), this);
-    priceLabel->setObjectName(QStringLiteral("priceLabel"));
+        new QLabel(
+            QStringLiteral(
+                "%1 元/度"
+            ).arg(
+                m_item.price,
+                0,
+                'f',
+                2
+            ),
+            this
+        );
 
-    auto *freeLabel = new QLabel(
-        QStringLiteral("空闲 %1/%2").arg(m_item.freeChargers).arg(m_item.totalChargers),
-        this);
-    // 无空闲桩时标红提示
-    freeLabel->setObjectName(m_item.freeChargers > 0
-                                 ? QStringLiteral("freeLabel")
-                                 : QStringLiteral("freeLabelFull"));
+    priceLabel->setObjectName(
+        QStringLiteral(
+            "priceLabel"
+        )
+    );
 
-    auto *topRow = new QHBoxLayout;
-    topRow->addWidget(nameLabel, 1);
-    topRow->addWidget(distLabel);
+    priceLabel->setStyleSheet(
+        QStringLiteral(R"(
+            QLabel {
+                color:#60A5FA;
+                background:transparent;
+                border:none;
 
-    auto *bottomRow = new QHBoxLayout;
-    bottomRow->addWidget(priceLabel, 1);
-    bottomRow->addWidget(freeLabel);
+                font-size:16px;
+                font-weight:800;
+            }
+        )")
+    );
 
-    auto *layout = new QVBoxLayout(this);
-    layout->setContentsMargins(14, 14, 14, 14);
-    layout->setSpacing(8);
-    layout->addLayout(topRow);
-    layout->addWidget(addressLabel);
-    layout->addLayout(bottomRow);
+
+    // ============================================================
+    // Current free chargers
+    // ============================================================
+
+    auto *freeLabel =
+        new QLabel(
+            QStringLiteral(
+                "空闲 %1/%2"
+            )
+                .arg(
+                    m_item.freeChargers
+                )
+                .arg(
+                    m_item.totalChargers
+                ),
+            this
+        );
+
+    freeLabel->setAlignment(
+        Qt::AlignCenter
+    );
+
+    freeLabel->setFixedHeight(
+        27
+    );
+
+
+    if (m_item.freeChargers > 0) {
+
+        freeLabel->setStyleSheet(
+            QStringLiteral(R"(
+                QLabel {
+                    background:#0C3C35;
+                    color:#34D399;
+
+                    border:1px solid #106B58;
+                    border-radius:7px;
+
+                    padding:0px 9px;
+
+                    font-size:11px;
+                    font-weight:800;
+                }
+            )")
+        );
+
+    } else {
+
+        freeLabel->setStyleSheet(
+            QStringLiteral(R"(
+                QLabel {
+                    background:#40232B;
+                    color:#F87171;
+
+                    border:1px solid #7F3342;
+                    border-radius:7px;
+
+                    padding:0px 9px;
+
+                    font-size:11px;
+                    font-weight:800;
+                }
+            )")
+        );
+    }
+
+
+    // ============================================================
+    // Bottom row
+    // ============================================================
+
+    auto *bottomRow =
+        new QHBoxLayout;
+
+    bottomRow->setContentsMargins(
+        0, 0, 0, 0
+    );
+
+    bottomRow->setSpacing(8);
+
+    bottomRow->addWidget(
+        priceLabel
+    );
+
+    bottomRow->addStretch();
+
+    bottomRow->addWidget(
+        freeLabel
+    );
+
+
+    // ============================================================
+    // Main layout
+    // ============================================================
+
+    auto *cardLayout =
+        new QVBoxLayout(this);
+
+    cardLayout->setContentsMargins(
+        14,
+        12,
+        14,
+        12
+    );
+
+    cardLayout->setSpacing(
+        6
+    );
+
+    cardLayout->addLayout(
+        topRow
+    );
+
+    cardLayout->addWidget(
+        addressLabel
+    );
+
+
+    if (predictionInfoLabel) {
+
+        cardLayout->addWidget(
+            predictionInfoLabel
+        );
+    }
+
+
+    cardLayout->addStretch();
+
+    cardLayout->addLayout(
+        bottomRow
+    );
 }
 
 void StationCardWidget::mouseReleaseEvent(QMouseEvent *event)
