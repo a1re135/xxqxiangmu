@@ -2,6 +2,10 @@
 #include "ui_personalhomepage.h"
 #include "loginwindow.h"
 #include "ordershistorydialog.h"
+#include "albumpickerdialog.h"
+#if NCS_HAS_CAMERA
+#include "avatarcapturedialog.h"
+#endif
 
 #include <QFileDialog>
 #include <QPixmap>
@@ -16,6 +20,11 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QVBoxLayout>
+#include <QMenu>
+#include <QStandardPaths>
+#include <QDateTime>
+#include <QDir>
+#include <QFile>
 
 namespace {
 const char *kSuccess = "#22C55E";
@@ -593,17 +602,113 @@ void PersonalHomePage::refreshStatusBadge()
 
 void PersonalHomePage::onChangeAvatarClicked()
 {
-    const QString path = QFileDialog::getOpenFileName(this, "选择头像图片", QString(),
-                                                        "图片文件 (*.png *.jpg *.jpeg *.bmp)");
-    if (path.isEmpty()) return;
+    // 点击头像：拍照 / 从相册选择 / 从文件选择。
+    QMenu menu(this);
+    menu.setStyleSheet(QStringLiteral(R"(
+QMenu {
+    background: #14243C;
+    border: 1px solid #264B70;
+    border-radius: 8px;
+    padding: 6px;
+}
+QMenu::item {
+    color: #E5EFFF;
+    padding: 10px 22px;
+    border-radius: 6px;
+    font-size: 13px;
+}
+QMenu::item:selected {
+    background: #2563EB;
+    color: white;
+}
+)"));
+    menu.setMinimumWidth(180);
+
+#if NCS_HAS_CAMERA
+    QAction *cameraAction = menu.addAction(QStringLiteral("📷 拍照上传"));
+#endif
+    QAction *albumAction = menu.addAction(QStringLiteral("🖼 从相册选择"));
+    QAction *fileAction = menu.addAction(QStringLiteral("📁 从文件选择"));
+
+    QAction *chosen = menu.exec(
+        ui->avatarLabel->mapToGlobal(
+            QPoint(0, ui->avatarLabel->height() + 4)));
+    if (!chosen)
+        return;
+
+#if NCS_HAS_CAMERA
+    if (chosen == cameraAction) {
+        applyAvatarFromCamera();
+        return;
+    }
+#endif
+
+    if (chosen == albumAction) {
+        AlbumPickerDialog dialog(this);
+        if (dialog.exec() != QDialog::Accepted)
+            return;
+
+        const QString path = dialog.selectedFilePath();
+        if (path.isEmpty())
+            return;
+
+        QString err;
+        if (!m_userService.updateAvatar(m_user.id, path, err)) {
+            QMessageBox::warning(this, "更新失败", err);
+            return;
+        }
+        reloadFromService();
+        return;
+    }
+
+    if (chosen == fileAction) {
+        const QString path = QFileDialog::getOpenFileName(this, "选择头像图片", QString(),
+                                                          "图片文件 (*.png *.jpg *.jpeg *.bmp)");
+        if (path.isEmpty()) return;
+
+        QString err;
+        if (!m_userService.updateAvatar(m_user.id, path, err)) {
+            QMessageBox::warning(this, "更新失败", err);
+            return;
+        }
+        reloadFromService();
+    }
+}
+
+#if NCS_HAS_CAMERA
+void PersonalHomePage::applyAvatarFromCamera()
+{
+    AvatarCaptureDialog dialog(this);
+    if (dialog.exec() != QDialog::Accepted)
+        return;
+
+    QString source = dialog.capturedFilePath();
+    if (source.isEmpty())
+        return;
+
+    // 拍照结果落在系统临时目录，复制到应用数据目录 avatars/ 下，
+    // 避免临时文件被系统清理导致头像丢失。
+    const QString destDir = QStandardPaths::writableLocation(
+                                QStandardPaths::AppDataLocation)
+                            + QStringLiteral("/avatars");
+    QDir().mkpath(destDir);
+
+    const QString dest = destDir
+                         + QStringLiteral("/u%1_%2.jpg")
+                               .arg(m_user.id)
+                               .arg(QDateTime::currentMSecsSinceEpoch());
+
+    if (QFile::copy(source, dest))
+        source = dest;
 
     QString err;
-    if (!m_userService.updateAvatar(m_user.id, path, err)) {
+    if (!m_userService.updateAvatar(m_user.id, source, err)) {
         QMessageBox::warning(this, "更新失败", err);
         return;
     }
     reloadFromService();
 }
+#endif
 
 void PersonalHomePage::onSaveNicknameClicked()
 {

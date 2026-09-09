@@ -40,6 +40,9 @@ private:
     void applyCardShadows();
     void refreshStatusBadge();
     void refreshDisplay();
+#if NCS_HAS_CAMERA
+    void applyAvatarFromCamera();
+#endif
 
     Ui::PersonalHomePage *ui;
     UserService &m_userService;

@@ -20,6 +20,12 @@ find_package(
     COMPONENTS WebEngineWidgets
 )
 
+find_package(
+    Qt${QT_VERSION_MAJOR}
+    QUIET
+    COMPONENTS Multimedia MultimediaWidgets
+)
+
 set(PROJECT_SOURCES
     main.cpp
 
@@ -50,12 +56,17 @@ set(PROJECT_SOURCES
 
     ordershistorydialog.cpp
     ordershistorydialog.h
+
+    albumpickerdialog.h
+    albumpickerdialog.cpp
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(client_user
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
+        avatarcapturedialog.h avatarcapturedialog.cpp
+        albumpickerdialog.h albumpickerdialog.cpp
     )
 else()
     if(ANDROID)
@@ -111,6 +122,10 @@ add_custom_command(TARGET client_user POST_BUILD
     VERBATIM
 )
 
-if(QT_VERSION_MAJOR EQUAL 6)
-    qt_finalize_executable(client_user)
+if(QT_VERSION_MAJOR EQUAL 6 AND TARGET Qt6::Multimedia AND TARGET Qt6::MultimediaWidgets)
+    target_link_libraries(client_user PRIVATE Qt6::Multimedia Qt6::MultimediaWidgets)
+    target_compile_definitions(client_user PRIVATE NCS_HAS_CAMERA=1)
+else()
+    target_compile_definitions(client_user PRIVATE NCS_HAS_CAMERA=0)
 endif()
+
