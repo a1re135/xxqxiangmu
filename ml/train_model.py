@@ -26,6 +26,7 @@ NUMERIC_FEATURES = [
     "day_of_month",
     "month",
     "is_weekend",
+    "is_holiday",
 
     "hour_sin",
     "hour_cos",
@@ -218,6 +219,20 @@ def calculate_wmape(
             np.abs(actual - predicted)
         )
         / denominator
+        * 100.0
+    )
+
+
+def calculate_improvement(
+    model_error: float,
+    baseline_error: float,
+) -> float:
+    if baseline_error <= 1e-8:
+        return 0.0
+
+    return (
+        (baseline_error - model_error)
+        / baseline_error
         * 100.0
     )
 
@@ -439,28 +454,140 @@ def main():
         predictions,
     )
 
+        # ==========================================
+    # Naive baseline:
+    # same hour one week ago
+    # ==========================================
+
+    baseline_predictions = (
+        test_frame["load_lag_168h"]
+        .to_numpy(dtype=float)
+    )
+
+    baseline_predictions = np.maximum(
+        baseline_predictions,
+        0.0,
+    )
+
+    baseline_mae = mean_absolute_error(
+        y_test,
+        baseline_predictions,
+    )
+
+    baseline_rmse = np.sqrt(
+        mean_squared_error(
+            y_test,
+            baseline_predictions,
+        )
+    )
+
+    baseline_mape = calculate_mape(
+        y_test.to_numpy(),
+        baseline_predictions,
+    )
+
+    baseline_wmape = calculate_wmape(
+        y_test.to_numpy(),
+        baseline_predictions,
+    )
+
+
+    # ==========================================
+    # Improvement over baseline
+    # ==========================================
+
+    mae_improvement = calculate_improvement(
+        mae,
+        baseline_mae,
+    )
+
+    rmse_improvement = calculate_improvement(
+        rmse,
+        baseline_rmse,
+    )
+
+    mape_improvement = calculate_improvement(
+        mape,
+        baseline_mape,
+    )
+
+    wmape_improvement = calculate_improvement(
+        wmape,
+        baseline_wmape,
+    )
+
+
+    # ==========================================
+    # Evaluation result
+    # ==========================================
 
     print()
-    print("=" * 45)
+    print("=" * 72)
     print("Model evaluation")
-    print("=" * 45)
+    print("=" * 72)
 
     print(
-        f"MAE:   {mae:.4f} kWh"
+        f"{'Metric':<12}"
+        f"{'RandomForest':>18}"
+        f"{'Naive baseline':>18}"
+        f"{'Improvement':>18}"
+    )
+
+    print("-" * 72)
+
+    print(
+        f"{'MAE':<12}"
+        f"{mae:>18.4f}"
+        f"{baseline_mae:>18.4f}"
+        f"{mae_improvement:>17.2f}%"
     )
 
     print(
-        f"RMSE:  {rmse:.4f} kWh"
+        f"{'RMSE':<12}"
+        f"{rmse:>18.4f}"
+        f"{baseline_rmse:>18.4f}"
+        f"{rmse_improvement:>17.2f}%"
     )
 
     print(
-        f"MAPE:  {mape:.2f}% "
-        "(non-zero actual hours)"
+        f"{'MAPE':<12}"
+        f"{mape:>17.2f}%"
+        f"{baseline_mape:>17.2f}%"
+        f"{mape_improvement:>17.2f}%"
     )
 
     print(
-        f"WMAPE: {wmape:.2f}%"
+        f"{'WMAPE':<12}"
+        f"{wmape:>17.2f}%"
+        f"{baseline_wmape:>17.2f}%"
+        f"{wmape_improvement:>17.2f}%"
     )
+
+
+    # ==========================================
+    # Baseline verdict
+    # ==========================================
+
+    beats_baseline = (
+        mae < baseline_mae
+        and rmse < baseline_rmse
+        and mape < baseline_mape
+    )
+
+    print()
+    print("-" * 72)
+
+    if beats_baseline:
+        print(
+            "PASS: RandomForest outperforms "
+            "the naive weekly baseline."
+        )
+    else:
+        print(
+            "WARNING: RandomForest does not "
+            "outperform the naive baseline "
+            "on all required metrics."
+        )
 
 
     # ==========================================
@@ -497,9 +624,9 @@ def main():
         exist_ok=True,
     )
 
-
     model_package = {
-        "pipeline": pipeline,
+        "pipeline":
+            pipeline,
 
         "numeric_features":
             NUMERIC_FEATURES,
@@ -514,11 +641,52 @@ def main():
             RANDOM_SEED,
 
         "metrics": {
-            "mae": float(mae),
-            "rmse": float(rmse),
-            "mape": float(mape),
-            "wmape": float(wmape),
+            "mae":
+                float(mae),
+
+            "rmse":
+                float(rmse),
+
+            "mape":
+                float(mape),
+
+            "wmape":
+                float(wmape),
         },
+
+        "baseline": {
+            "name":
+                "same_hour_previous_week",
+
+            "mae":
+                float(baseline_mae),
+
+            "rmse":
+                float(baseline_rmse),
+
+            "mape":
+                float(baseline_mape),
+
+            "wmape":
+                float(baseline_wmape),
+        },
+
+        "baseline_improvement": {
+            "mae_percent":
+                float(mae_improvement),
+
+            "rmse_percent":
+                float(rmse_improvement),
+
+            "mape_percent":
+                float(mape_improvement),
+
+            "wmape_percent":
+                float(wmape_improvement),
+        },
+
+        "beats_baseline":
+            bool(beats_baseline),
 
         "training_rows":
             len(train_frame),
@@ -550,7 +718,6 @@ def main():
     print(
         "Training completed successfully."
     )
-
 
 if __name__ == "__main__":
     main()

@@ -185,6 +185,12 @@ def add_calendar_features(
     frame["is_weekend"] = (
         frame["day_of_week"] >= 5
     ).astype(int)
+    
+    frame["is_holiday"] = (
+    frame["timestamp"]
+    .apply(is_holiday)
+    .astype(int)
+    )
 
     # Cyclic hour encoding.
     frame["hour_sin"] = np.sin(
@@ -366,6 +372,40 @@ def build_training_dataset(
     frame = frame.reset_index(drop=True)
 
     return frame
+
+
+HOLIDAY_MONTH_DAYS = {
+    (1, 1),   # New Year
+    (5, 1),   # Labour Day
+
+    (10, 1),
+    (10, 2),
+    (10, 3),
+    (10, 4),
+    (10, 5),
+    (10, 6),
+    (10, 7),
+}
+
+
+def is_holiday(
+    timestamp: pd.Timestamp,
+) -> int:
+    """
+    Deterministic holiday feature used by the
+    demo ML pipeline.
+
+    1 = holiday
+    0 = normal day
+    """
+
+    return int(
+        (
+            timestamp.month,
+            timestamp.day,
+        )
+        in HOLIDAY_MONTH_DAYS
+    )
 
 
 def main():

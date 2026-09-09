@@ -17,6 +17,7 @@ from common import (
 from prepare_data import (
     build_hourly_dataset,
     load_orders,
+    is_holiday,
 )
 
 
@@ -213,6 +214,9 @@ def create_feature_row(
 
         "is_weekend":
             int(day_of_week >= 5),
+        
+        "is_holiday":
+            is_holiday(target_time),
 
         "hour_sin":
             np.sin(

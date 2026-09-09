@@ -72,7 +72,8 @@ bool AdminUserService::hasActiveChargingOrder(int userId,
     query.prepare(
         "SELECT COUNT(*) "
         "FROM charging_order "
-        "WHERE user_id = :user_id AND status = 0"
+        "WHERE user_id = :user_id "
+        "AND status IN (0, 1)"
     );
     query.bindValue(":user_id", userId);
 
