@@ -192,36 +192,6 @@ void MainWindow::setupChargerManagement()
     auto *header = new QHBoxLayout();
     header->setSpacing(14);
 
-    auto *icon = new QLabel(QStringLiteral("▤"), page);
-    icon->setFixedSize(48, 48);
-    icon->setAlignment(Qt::AlignCenter);
-    icon->setStyleSheet(QStringLiteral(
-        "QLabel { color:#10B981; background:#102D2B; border:1px solid #1B5148; "
-        "border-radius:14px; font-size:24px; font-weight:900; }"));
-
-    auto *titleBox = new QVBoxLayout();
-    titleBox->setSpacing(2);
-    auto *title = new QLabel(QStringLiteral("充电桩管理"), page);
-    title->setStyleSheet(QStringLiteral(
-        "QLabel { color:#F5F7FA; font-size:24px; font-weight:900; }"));
-    auto *subtitle = new QLabel(
-        QStringLiteral("查看全部电桩运行状态，支持筛选、搜索与远程运维"),
-        page);
-    subtitle->setStyleSheet(QStringLiteral(
-        "QLabel { color:#8FA1AC; font-size:14px; font-weight:600; }"));
-    titleBox->addWidget(title);
-    titleBox->addWidget(subtitle);
-
-    header->addWidget(icon);
-    header->addLayout(titleBox);
-    header->addStretch();
-
-    auto *hint = new QLabel(QStringLiteral("数据实时读取自 charger 表"), page);
-    hint->setStyleSheet(QStringLiteral(
-        "QLabel { color:#718394; background:#162336; border:1px solid #2B3A4D; "
-        "border-radius:10px; padding:9px 12px; font-size:13px; font-weight:700; }"));
-    header->addWidget(hint);
-
     rootLayout->addLayout(header);
 
     // Filters.

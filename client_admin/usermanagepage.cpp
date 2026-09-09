@@ -76,33 +76,6 @@ void MainWindow::setupUserManagement()
     auto *header = new QHBoxLayout();
     header->setSpacing(14);
 
-    auto *icon = new QLabel(QStringLiteral("♙"), page);
-    icon->setFixedSize(48, 48);
-    icon->setAlignment(Qt::AlignCenter);
-    icon->setStyleSheet(QStringLiteral(
-        "QLabel { color:#10B981; background:#102D2B; border:1px solid #1B5148; "
-        "border-radius:14px; font-size:24px; font-weight:900; }"));
-
-    auto *titleBox = new QVBoxLayout();
-    titleBox->setSpacing(2);
-
-    auto *title = new QLabel(QStringLiteral("用户管理"), page);
-    title->setStyleSheet(QStringLiteral(
-        "QLabel { color:#F5F7FA; font-size:24px; font-weight:900; }"));
-
-    auto *subtitle = new QLabel(
-        QStringLiteral("查询用户账户、余额与状态，支持冻结、解冻及订单历史查看"),
-        page);
-    subtitle->setStyleSheet(QStringLiteral(
-        "QLabel { color:#8FA1AC; font-size:14px; font-weight:600; }"));
-
-    titleBox->addWidget(title);
-    titleBox->addWidget(subtitle);
-
-    header->addWidget(icon);
-    header->addLayout(titleBox);
-    header->addStretch();
-
     m_userSummaryLabel = new QLabel(QStringLiteral("共 0 位用户"), page);
     m_userSummaryLabel->setStyleSheet(QStringLiteral(
         "QLabel { color:#718394; background:#162336; border:1px solid #2B3A4D; "

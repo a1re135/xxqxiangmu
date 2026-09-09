@@ -177,27 +177,46 @@ void MainWindow::setupStationManagement()
 
     auto *header = new QHBoxLayout();
     header->setSpacing(14);
-    auto *icon = new QLabel(QStringLiteral("⌂"), page);
-    icon->setFixedSize(50, 50);
-    icon->setAlignment(Qt::AlignCenter);
-    icon->setStyleSheet(QStringLiteral(
-        "QLabel { color:#10B981; background:#102D2B; border:1px solid #1B5148; border-radius:14px; font-size:26px; font-weight:900; }"));
-    auto *titleBox = new QVBoxLayout();
-    titleBox->setSpacing(2);
-    auto *title = new QLabel(QStringLiteral("充电站管理"), page);
-    title->setStyleSheet(QStringLiteral("QLabel { color:#F5F7FA; font-size:25px; font-weight:900; }"));
-    auto *subtitle = new QLabel(QStringLiteral("维护电站基础信息、站内电桩与在线率，支持新增、修改与删除"), page);
-    subtitle->setStyleSheet(QStringLiteral("QLabel { color:#8FA1AC; font-size:14px; font-weight:600; }"));
-    titleBox->addWidget(title); titleBox->addWidget(subtitle);
-    header->addWidget(icon); header->addLayout(titleBox); header->addStretch();
 
-    auto *addButton = new QPushButton(QStringLiteral("＋  新增电站"), page);
+    auto *addButton =
+        new QPushButton(
+            QStringLiteral("＋  新增电站"),
+            page
+        );
+
     auto buttonStyle = QStringLiteral(
-        "QPushButton { background:#10B981; color:#071A15; border:none; border-radius:10px; padding:11px 20px; font-size:14px; font-weight:900; }"
-        "QPushButton:hover { background:#16D497; }");
+        "QPushButton {"
+        "background:#10B981;"
+        "color:#071A15;"
+        "border:none;"
+        "border-radius:10px;"
+        "padding:11px 20px;"
+        "font-size:14px;"
+        "font-weight:900;"
+        "}"
+        "QPushButton:hover {"
+        "background:#16D497;"
+        "}"
+    );
+
     addButton->setStyleSheet(buttonStyle);
-    addButton->setMinimumHeight(44);
-    header->addWidget(addButton);
+
+    // Don't let it expand
+    addButton->setFixedSize(120, 44);
+
+    m_addStationButton = addButton;
+
+
+    // Top-right action row
+    auto *actionRow = new QHBoxLayout();
+
+    actionRow->setContentsMargins(0, 0, 0, 0);
+    actionRow->setSpacing(0);
+
+    actionRow->addStretch();
+    actionRow->addWidget(addButton);
+
+    rootLayout->addLayout(actionRow);
     m_addStationButton = addButton;
     rootLayout->addLayout(header);
 

@@ -39,6 +39,7 @@
 #include <QGroupBox>
 #include <QStandardItemModel>
 #include <QStandardItem>
+#include <QStackedWidget>
 
 #include <QtCharts/QBarCategoryAxis>
 #include <QtCharts/QBarSeries>
@@ -92,9 +93,67 @@ MainWindow::MainWindow(QWidget *parent)
     setupChargerManagement();
     setupStationManagement();
     setupUserManagement();
+    setupPredictionPage();
+
     selectPage(0);
     timer->start();
     refreshDashboard();
+
+    m_autoRefreshTimer = new QTimer(this);
+    m_autoRefreshTimer->setInterval(3000); // every 3 seconds
+
+    connect(
+        m_autoRefreshTimer,
+        &QTimer::timeout,
+        this,
+        [this]()
+        {
+            auto *stacked =
+                uiObject<QStackedWidget>(
+                    this,
+                    QStringLiteral("stackedWidget")
+                );
+
+            if (!stacked) {
+                return;
+            }
+
+            const int index =
+                stacked->currentIndex();
+
+            switch (index) {
+
+            case 0:
+                // 营收分析 - manual refresh only
+                break;
+
+            case 1:
+                refreshChargerStatusOverview();
+                break;
+
+            case 2:
+                refreshChargerManagement();
+                break;
+
+            case 3:
+                refreshStationManagement();
+                break;
+
+            case 4:
+                refreshUserManagement();
+                break;
+
+            case 5:
+                refreshPredictionPage();
+                break;
+
+            default:
+                break;
+            }
+        }
+    );
+
+    m_autoRefreshTimer->start();
 }
 
 MainWindow::~MainWindow()
@@ -160,6 +219,8 @@ void MainWindow::selectPage(int index)
         refreshStationManagement(m_selectedStationId);
     } else if (index == 4) {
         refreshUserManagement();
+    } else if (index == 5) {
+        refreshPredictionPage();
     }
 }
 

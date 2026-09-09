@@ -15,6 +15,8 @@
 
 namespace {
 
+constexpr qint64 kFullChargeSimulatedSeconds = 3600;
+
 QString formatDuration(qint64 seconds)
 {
     if (seconds < 0) {
@@ -715,6 +717,66 @@ void OrderSettlementDialog::reloadOrder()
         }
     }
 
+    if (info.status == 1
+        && info.simulatedSeconds >= kFullChargeSimulatedSeconds
+        && !m_autoFinishAttempted) {
+
+        m_autoFinishAttempted = true;
+
+        core::SettlementResult result;
+        QString finishError;
+
+        const bool success =
+            chargeService.finishCharging(
+                m_userId,
+                m_orderId,
+                result,
+                finishError
+            );
+
+        if (!success) {
+            m_notice->setText(
+                QStringLiteral(
+                    "充电已达到100%，自动结算失败：%1\n"
+                    "请点击“结束充电”重新结算。")
+                    .arg(finishError)
+            );
+
+            return;
+        }
+
+        // 读取完整的小票
+        core::OrderReceipt receipt;
+
+        QString receiptError;
+
+        if (!chargeService.getReceipt(
+                m_userId,
+                m_orderId,
+                receipt,
+                receiptError)) {
+
+            // 如果读取小票失败，
+            // 至少用结算结果显示基本信息。
+            receipt.orderId = result.orderId;
+            receipt.status = 2;
+            receipt.endTime = result.endTime;
+            receipt.simulatedSeconds =
+                result.simulatedSeconds;
+            receipt.energy = result.energy;
+            receipt.amount = result.amount;
+            receipt.paidAmount =
+                result.paidAmount;
+            receipt.debtAmount =
+                result.debtAmount;
+            receipt.balanceAfter =
+                result.balanceAfter;
+        }
+
+        showReceipt(receipt);
+        return;
+    }
+
     const QString startText =
         info.startTime.isEmpty()
             ? QStringLiteral("尚未开始")
@@ -856,8 +918,12 @@ void OrderSettlementDialog::reloadOrder()
     if (isCharging) {
         const int percent = qBound(
             0,
-            static_cast<int>(info.simulatedSeconds * 100 / 3600),
-            100);
+            static_cast<int>(
+                info.simulatedSeconds * 100
+                / kFullChargeSimulatedSeconds
+            ),
+            100
+        );
         m_socBar->setValue(percent);
         m_socLabel->setText(QStringLiteral(
             "模拟电量：%1%（按 1 小时充满估算）")
@@ -877,7 +943,7 @@ void OrderSettlementDialog::reloadOrder()
     case 1:
         m_notice->setText(QStringLiteral(
             "正在模拟充电，费用每秒刷新。"
-            "点击“结束充电”后结算。"));
+            "电量达到100%后将自动停止并结算。"));
         break;
     case 2:
         m_notice->setText(QStringLiteral("该订单已结算。"));

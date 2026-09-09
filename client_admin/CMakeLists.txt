@@ -35,6 +35,7 @@ set(PROJECT_SOURCES
     stationmanagepage.cpp
     usermanagepage.cpp
     userorders.cpp
+    predictionpage.cpp
 
     adminloginwindow.cpp
     adminloginwindow.h

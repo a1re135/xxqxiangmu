@@ -48,6 +48,7 @@ private:
     int m_userId = -1;
     bool m_expiredHandled = false;
     bool m_settledShown = false;
+    bool m_autoFinishAttempted = false;
 
     QLabel *m_title = nullptr;
     QLabel *m_details = nullptr;

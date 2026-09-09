@@ -56,11 +56,10 @@ MainWindow::MainWindow(core::StationService *service,
 
             const auto answer = QMessageBox::question(
                 messageParent,
-                QStringLiteral("预约电桩"),
+                QStringLiteral("开始充电"),
                 QStringLiteral(
-                    "确定预约所选电桩吗？\n"
-                    "预约成功后会占用该电桩，"
-                    "点击“开始充电”后才开始计费。"),
+                    "确定使用所选电桩并立即开始充电吗？\n"
+                    "确认后将立即开始计费。"),
                 QMessageBox::Yes | QMessageBox::No,
                 QMessageBox::No
             );
@@ -70,40 +69,60 @@ MainWindow::MainWindow(core::StationService *service,
             }
 
             core::ChargeService chargeService;
+
             int orderId = -1;
             QString errorMessage;
 
-            const bool success = chargeService.reserveCharger(
-                m_currentUser.id,
-                stationId,
-                chargerId,
-                orderId,
-                errorMessage
-            );
-
-            // 成功或失败都刷新，避免显示过期的空闲数量。
-            m_stationPage->refresh();
-
-            if (!success) {
-                QMessageBox::warning(
-                    messageParent,
-                    QStringLiteral("预约失败"),
+            // 1. 先创建订单并占用电桩
+            const bool reserveSuccess =
+                chargeService.reserveCharger(
+                    m_currentUser.id,
+                    stationId,
+                    chargerId,
+                    orderId,
                     errorMessage
                 );
+
+            if (!reserveSuccess) {
+                m_stationPage->refresh();
+
+                QMessageBox::warning(
+                    messageParent,
+                    QStringLiteral("开始充电失败"),
+                    errorMessage
+                );
+
                 return;
             }
 
-            QMessageBox::information(
-                messageParent,
-                QStringLiteral("预约成功"),
-                QStringLiteral(
-                    "预约订单编号：%1\n"
-                    "电桩已保留，尚未开始充电，未扣费。")
-                    .arg(orderId)
-            );
+            // 2. 预约成功后立即开始充电
+            QString startError;
 
-            // 暂时复用现有订单页查看预约。
-            // 下一步在这个页面接入开始充电和倒计时。
+            const bool startSuccess =
+                chargeService.startReservedCharging(
+                    m_currentUser.id,
+                    orderId,
+                    startError
+                );
+
+            m_stationPage->refresh();
+
+            if (!startSuccess) {
+                QMessageBox::warning(
+                    messageParent,
+                    QStringLiteral("自动开始充电失败"),
+                    QStringLiteral(
+                        "订单已经创建，但自动开始充电失败。\n%1")
+                        .arg(startError)
+                );
+
+                // 打开订单页，避免用户找不到刚创建的订单
+                emit settlementRequested(orderId);
+                return;
+            }
+
+            // 不再弹出“预约成功”
+            // 直接进入正在充电页面
             emit settlementRequested(orderId);
         }
     );

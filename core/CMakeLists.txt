@@ -10,11 +10,9 @@ set(CMAKE_AUTORCC ON)
 
 add_library(ncs_core STATIC
 
-    # Existing shared logging
     logging/ncslogger.cpp
     logging/ncslogger.h
 
-    # Database
     database/databasemanager.cpp
     database/databasemanager.h
 
@@ -24,7 +22,6 @@ add_library(ncs_core STATIC
     database/station_repository.cpp
     database/station_repository.h
 
-    # Existing services
     service/userservice.cpp
     service/userservice.h
 
@@ -33,6 +30,9 @@ add_library(ncs_core STATIC
 
     service/statsservice.cpp
     service/statsservice.h
+
+    service/predictionservice.cpp
+    service/predictionservice.h
 
     service/chargerservice.cpp
     service/chargerservice.h
@@ -46,7 +46,6 @@ add_library(ncs_core STATIC
     service/adminuserservice.cpp
     service/adminuserservice.h
 
-    # Jiaqi UC-U02
     service/stationservice.cpp
     service/stationservice.h
 
