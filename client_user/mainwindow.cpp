@@ -24,6 +24,7 @@
 #include <cmath>
 #include "navigationdialog.h"
 #include <QMessageBox>
+#include <QGridLayout>
 #include "ui/station_list_page.h"
 #include "service/charge_service.h"
 
@@ -260,6 +261,71 @@ QDialog *MainWindow::buildStationDetailDialog(
     dialog->setModal(true);
     dialog->resize(420,760);
 
+    dialog->setStyleSheet(R"(
+
+        QDialog {
+            background-color: #08111F;
+        }
+
+        QLabel#detailPageTitle {
+            color: #FFFFFF;
+
+            font-size: 22px;
+            font-weight: 800;
+        }
+
+        QFrame#stationHeroCard {
+            background-color: #0E2037;
+
+            border: 1px solid #285078;
+            border-radius: 16px;
+        }
+
+        QLabel#detailStationName {
+            color: #FFFFFF;
+
+            font-size: 21px;
+            font-weight: 800;
+        }
+
+        QLabel#detailAddress {
+            color: #8FA9C8;
+            font-size: 12px;
+        }
+
+        QFrame#metricCard {
+            background-color: #0A192C;
+
+            border: 1px solid #24496D;
+            border-radius: 11px;
+        }
+
+        QLabel#metricTitle {
+            color: #8FA9C8;
+            font-size: 11px;
+        }
+
+        QLabel#metricValue {
+            color: #60A5FA;
+
+            font-size: 16px;
+            font-weight: 800;
+        }
+
+        QLabel#chargerSectionTitle {
+            color: #FFFFFF;
+
+            font-size: 17px;
+            font-weight: 800;
+        }
+
+        QLabel#chargerSummary {
+            color: #8FA9C8;
+            font-size: 11px;
+        }
+
+    )");
+
     auto *mainLayout = new QVBoxLayout(dialog);
     mainLayout->setContentsMargins(12, 16, 12, 16);
     mainLayout->setSpacing(10);
@@ -268,56 +334,194 @@ QDialog *MainWindow::buildStationDetailDialog(
     // 1. 顶部：电站基本信息
     // ==============================
 
-    auto *nameLabel = new QLabel(item.name, dialog);
-    nameLabel->setTextFormat(Qt::PlainText);
-    nameLabel->setWordWrap(true);
-    nameLabel->setStyleSheet(
-        "color: #F2F5FA;"
-        "font-size: 22px;"
-        "font-weight: bold;"
+    // ==============================
+    // Polished page title
+    // ==============================
+
+    auto *pageTitle = new QLabel(
+        QStringLiteral("电站详情"),
+        dialog
     );
 
-    mainLayout->addWidget(nameLabel);
+    pageTitle->setObjectName(
+        QStringLiteral("detailPageTitle")
+    );
 
-    auto *formLayout = new QFormLayout;
-    formLayout->setHorizontalSpacing(14);
-    formLayout->setVerticalSpacing(10);
+    pageTitle->setAlignment(Qt::AlignCenter);
 
-    auto *addressLabel = new QLabel(item.address, dialog);
-    addressLabel->setTextFormat(Qt::PlainText);
+    mainLayout->addWidget(pageTitle);
+
+
+    // ==============================
+    // Station information card
+    // ==============================
+
+    auto *heroCard = new QFrame(dialog);
+
+    heroCard->setObjectName(
+        QStringLiteral("stationHeroCard")
+    );
+
+    auto *heroLayout = new QVBoxLayout(heroCard);
+
+    heroLayout->setContentsMargins(
+        16, 16, 16, 16
+    );
+
+    heroLayout->setSpacing(10);
+
+
+    auto *nameLabel = new QLabel(
+        item.name,
+        heroCard
+    );
+
+    nameLabel->setObjectName(
+        QStringLiteral("detailStationName")
+    );
+
+    nameLabel->setWordWrap(true);
+
+    heroLayout->addWidget(nameLabel);
+
+
+    auto *addressLabel = new QLabel(
+        item.address,
+        heroCard
+    );
+
+    addressLabel->setObjectName(
+        QStringLiteral("detailAddress")
+    );
+
     addressLabel->setWordWrap(true);
 
-    auto *priceLabel = new QLabel(
-        QStringLiteral("%1 元/度")
-            .arg(item.price, 0, 'f', 2),
-        dialog
+    heroLayout->addWidget(addressLabel);
+
+
+    auto makeMetricCard =
+        [heroCard](
+            const QString &title,
+            const QString &value)
+    {
+        auto *frame = new QFrame(heroCard);
+
+        frame->setObjectName(
+            QStringLiteral("metricCard")
+        );
+
+        auto *layout = new QVBoxLayout(frame);
+
+        layout->setContentsMargins(
+            10, 9, 10, 9
+        );
+
+        layout->setSpacing(3);
+
+
+        auto *titleLabel =
+            new QLabel(title, frame);
+
+        titleLabel->setObjectName(
+            QStringLiteral("metricTitle")
+        );
+
+        titleLabel->setAlignment(
+            Qt::AlignCenter
+        );
+
+
+        auto *valueLabel =
+            new QLabel(value, frame);
+
+        valueLabel->setObjectName(
+            QStringLiteral("metricValue")
+        );
+
+        valueLabel->setAlignment(
+            Qt::AlignCenter
+        );
+
+        valueLabel->setWordWrap(true);
+
+
+        layout->addWidget(titleLabel);
+        layout->addWidget(valueLabel);
+
+        return frame;
+    };
+
+
+    auto *metricsLayout = new QHBoxLayout;
+
+    metricsLayout->setSpacing(8);
+
+
+    metricsLayout->addWidget(
+        makeMetricCard(
+            QStringLiteral("充电单价"),
+            QStringLiteral("%1 元/度")
+                .arg(
+                    item.price,
+                    0,
+                    'f',
+                    2
+                )
+        ),
+        1
     );
 
-    auto *distanceLabel = new QLabel(
-        QStringLiteral("%1 公里")
-            .arg(item.distanceKm, 0, 'f', 1),
-        dialog
+
+    metricsLayout->addWidget(
+        makeMetricCard(
+            QStringLiteral("距离"),
+            QStringLiteral("%1 公里")
+                .arg(
+                    item.distanceKm,
+                    0,
+                    'f',
+                    1
+                )
+        ),
+        1
     );
 
-    formLayout->addRow(
-        QStringLiteral("详细地址："), addressLabel);
 
-    formLayout->addRow(
-        QStringLiteral("充电单价："), priceLabel);
-
-    formLayout->addRow(
-        QStringLiteral("距离："), distanceLabel);
-
-    mainLayout->addLayout(formLayout);
-
-    auto *sectionLabel = new QLabel(
-        QStringLiteral("本站电桩"), dialog);
-
-    sectionLabel->setStyleSheet(
-        "color: #BFDBFE;"
-        "font-size: 16px;"
-        "font-weight: bold;"
+    metricsLayout->addWidget(
+        makeMetricCard(
+            QStringLiteral("详细地址"),
+            item.address
+        ),
+        1
     );
+
+
+    heroLayout->addLayout(metricsLayout);
+
+    mainLayout->addWidget(heroCard);
+
+
+    // ==============================
+    // Charger section
+    // ==============================
+
+    auto *sectionHeader =
+        new QHBoxLayout;
+
+    auto *sectionLabel =
+        new QLabel(
+            QStringLiteral("本站电桩"),
+            dialog
+        );
+
+    sectionLabel->setObjectName(
+        QStringLiteral("chargerSectionTitle")
+    );
+
+    sectionHeader->addWidget(sectionLabel);
+    sectionHeader->addStretch();
+
+    mainLayout->addLayout(sectionHeader);
 
     mainLayout->addWidget(sectionLabel);
 
@@ -326,6 +530,57 @@ QDialog *MainWindow::buildStationDetailDialog(
     // ==============================
 
     auto *table = new QTableWidget(dialog);
+
+    table->setStyleSheet(R"(
+
+        QTableWidget {
+            background-color: #0D1B2D;
+            alternate-background-color: #11253D;
+
+            color: #EDF5FF;
+
+            border: 1px solid #294C70;
+            border-radius: 11px;
+
+            font-size: 11px;
+
+            gridline-color: #233D59;
+        }
+
+        QTableWidget::item {
+            padding: 4px;
+
+            border-bottom:
+                1px solid #1A3550;
+        }
+
+        QTableWidget::item:selected {
+            background-color: #245587;
+
+            color: white;
+        }
+
+        QHeaderView::section {
+            background-color: #173656;
+
+            color: #BBDDFF;
+
+            border: none;
+            border-right:
+                1px solid #284A69;
+
+            padding: 6px 3px;
+
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        QTableCornerButton::section {
+            background-color: #173656;
+            border: none;
+        }
+
+    )");
 
     table->setColumnCount(6);
     table->setHorizontalHeaderLabels(
@@ -354,6 +609,11 @@ QDialog *MainWindow::buildStationDetailDialog(
 
     table->setAlternatingRowColors(true);
     table->setShowGrid(false);
+
+    table->setFocusPolicy(Qt::NoFocus);
+
+    table->horizontalHeader()
+        ->setDefaultAlignment(Qt::AlignCenter);
 
     table->verticalHeader()->hide();
     table->verticalHeader()->setDefaultSectionSize(44);
@@ -532,11 +792,23 @@ QDialog *MainWindow::buildStationDetailDialog(
                  ++column) {
 
                 auto *cell = new QTableWidgetItem(
-                    values.at(column));
+                    values.at(column)
+                );
 
-                cell->setToolTip(values.at(column));
+                cell->setToolTip(
+                    values.at(column)
+                );
 
-                table->setItem(row, column, cell);
+                // Center all table data.
+                cell->setTextAlignment(
+                    Qt::AlignCenter
+                );
+
+                table->setItem(
+                    row,
+                    column,
+                    cell
+                );
             }
 
             // 第3列是状态列，列编号从0开始。
@@ -561,6 +833,8 @@ QDialog *MainWindow::buildStationDetailDialog(
     // ==============================
 
     auto *buttons = new QDialogButtonBox(dialog);
+
+    buttons->setCenterButtons(true);
 
     // 一键导航按钮
     auto *navigationButton = buttons->addButton(
@@ -611,6 +885,40 @@ QDialog *MainWindow::buildStationDetailDialog(
         QStringLiteral("关闭"),
         QDialogButtonBox::RejectRole
     );
+
+    navigationButton->setMinimumWidth(105);
+    refreshButton->setMinimumWidth(105);
+    closeButton->setMinimumWidth(105);
+
+    navigationButton->setMinimumHeight(38);
+    refreshButton->setMinimumHeight(38);
+    closeButton->setMinimumHeight(38);
+
+    buttons->setStyleSheet(R"(
+
+        QPushButton {
+            background-color: #10243D;
+
+            color: #CDE5FF;
+
+            border: 1px solid #315A82;
+            border-radius: 9px;
+
+            min-height: 38px;
+
+            font-weight: 600;
+        }
+
+        QPushButton:hover {
+            background-color: #183A60;
+            border-color: #60A5FA;
+        }
+
+        QPushButton:pressed {
+            background-color: #204C78;
+        }
+
+    )");
 
     refreshButton->setCursor(Qt::PointingHandCursor);
     closeButton->setCursor(Qt::PointingHandCursor);
@@ -818,90 +1126,378 @@ QDialog *MainWindow::buildStationDetailDialog(
 
 void MainWindow::setupStyle()
 {
-    // 与登录页、个人主页统一：深蓝背景、蓝色强调、圆角卡片。
     setStyleSheet(QStringLiteral(R"(
-        QWidget {
-            font-family: "Noto Sans CJK SC", "Microsoft YaHei", "PingFang SC", sans-serif;
-            font-size: 13px; color: #F2F5FA;
-        }
-        QMainWindow, QDialog, QWidget#chargingCentral, QStackedWidget {
-            background: #0B1220;
-        }
-        QLabel { background: transparent; }
-        QLabel#brandMark {
-            background: qlineargradient(x1:0,y1:0,x2:1,y2:1,stop:0 #3B82F6,stop:1 #35D7FF);
-            color: white; border-radius: 20px; font-size: 22px; font-weight: bold;
-        }
-        QLabel#brandName { font-size: 18px; font-weight: bold; }
-        QLabel#brandCaption { color: #8A93A6; font-size: 9px; }
-        QLabel#pageTitle { font-size: 25px; font-weight: bold; }
-        QLabel#pageSubtitle { color: #8FA3BC; font-size: 12px; }
-        QLabel#sectionTitle { font-size: 15px; font-weight: bold; }
-        QFrame#locationPanel {
-            background: #111E33; border: 1px solid #22344F; border-radius: 16px;
-        }
-        QComboBox, QLineEdit {
-            background: #0F1A30; color: #F2F5FA;
-            border: 1px solid #2A3C57; border-radius: 10px;
-            padding: 9px 10px; min-height: 20px;
-            selection-background-color: #3B82F6; selection-color: white;
-        }
-        QComboBox:focus, QLineEdit:focus { border-color: #60A5FA; }
-        QComboBox::drop-down { border: none; width: 26px; }
-        QComboBox QAbstractItemView {
-            background: #14233B; color: #F2F5FA; border: 1px solid #2A3C57;
-            selection-background-color: #2556A0; selection-color: white;
-            outline: none;
-        }
-        QPushButton {
-            background: #14243C; color: #BFDBFE; border: 1px solid #2A4364;
-            border-radius: 10px; padding: 8px 12px; min-height: 20px;
-        }
-        QPushButton:hover { background: #1C3354; border-color: #60A5FA; }
-        QPushButton:pressed { background: #24456E; }
-        QPushButton:focus { border-color: #93C5FD; }
-        QPushButton#locateBtn, QPushButton#navBtn:checked {
-            background: qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #2563EB,stop:1 #3B82F6);
-            color: white; border: 1px solid #3B82F6; font-weight: bold;
-        }
-        QPushButton#locateBtn:hover, QPushButton#navBtn:checked:hover { background: #397EF1; }
-        QPushButton#locateBtn:pressed { background: #1D4ED8; }
-        QPushButton:disabled { background: #1C2C45; color: #788CA6; border-color: #263853; }
-        QPushButton#navBtn { padding: 12px 0; font-size: 14px; border-radius: 12px; }
-        QLabel#locationLabel { color: #99ACC3; font-size: 11px; }
-        QLabel#toastLabel {
-            background: #102D43; color: #7DD3FC;
-            border: 1px solid #205471; border-radius: 10px; padding: 8px;
-        }
-        QLabel#toastLabel[error="true"] {
-            background: #36202C; color: #FDA4AF; border-color: #653348;
-        }
-        QFrame#stationCard {
-            background: #111E33; border: 1px solid #22344F; border-radius: 16px;
-        }
-        QFrame#stationCard:hover { background: #15253E; border-color: #3B82F6; }
-        QLabel#stationName { font-size: 15px; font-weight: bold; color: #F2F5FA; }
-        QLabel#stationAddress { color: #93A5BD; font-size: 11px; }
-        QLabel#priceLabel { color: #60A5FA; font-weight: bold; font-size: 16px; }
-        QLabel#freeLabel {
-            background: #10372F; color: #6EE7B7; border-radius: 7px;
-            padding: 4px 7px; font-size: 11px; font-weight: bold;
-        }
-        QLabel#freeLabelFull {
-            background: #3B2431; color: #FDA4AF; border-radius: 7px;
-            padding: 4px 7px; font-size: 11px;
-        }
-        QLabel#distLabel { color: #7DD3FC; font-size: 12px; font-weight: bold; }
-        QLabel#emptyHint { color: #99ACC3; font-size: 14px; }
-        QLabel#detailNote { color: #99ACC3; font-size: 11px; }
-        QScrollArea#cardScrollArea { background: transparent; border: none; }
-        QWidget#cardsContainer { background: #0B1220; }
-        QScrollBar:vertical { background: #0B1220; width: 5px; margin: 0; }
-        QScrollBar::handle:vertical { background: #314869; min-height: 30px; border-radius: 2px; }
-        QScrollBar::handle:vertical:hover { background: #60A5FA; }
-        QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }
-        QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical { background: transparent; }
-    )"));
+
+            /* ==============================
+               GLOBAL
+               ============================== */
+
+            QWidget {
+                font-family:
+                    "Noto Sans CJK SC",
+                    "Microsoft YaHei",
+                    "PingFang SC",
+                    sans-serif;
+
+                font-size: 13px;
+                color: #F2F5FA;
+            }
+
+            QMainWindow,
+            QDialog,
+            QWidget#chargingCentral,
+            QStackedWidget {
+                background-color: #08111F;
+            }
+
+            QLabel {
+                background: transparent;
+            }
+
+
+            /* ==============================
+               BRAND
+               ============================== */
+
+            QLabel#brandMark {
+                background:
+                    qlineargradient(
+                        x1:0, y1:0,
+                        x2:1, y2:1,
+                        stop:0 #2563EB,
+                        stop:1 #22D3EE
+                    );
+
+                color: white;
+
+                border-radius: 20px;
+
+                font-size: 22px;
+                font-weight: 800;
+            }
+
+            QLabel#brandName {
+                color: #FFFFFF;
+
+                font-size: 19px;
+                font-weight: 800;
+            }
+
+            QLabel#brandCaption {
+                color: #7389A6;
+
+                font-size: 9px;
+                letter-spacing: 1px;
+            }
+
+
+            /* ==============================
+               PAGE TITLE
+               ============================== */
+
+            QLabel#pageTitle {
+                color: #FFFFFF;
+
+                font-size: 27px;
+                font-weight: 800;
+
+                padding-top: 3px;
+            }
+
+            QLabel#pageSubtitle {
+                color: #8FA9C8;
+
+                font-size: 12px;
+
+                padding-bottom: 3px;
+            }
+
+            QLabel#sectionTitle {
+                color: #E8F2FF;
+
+                font-size: 16px;
+                font-weight: 700;
+
+                padding-top: 3px;
+                padding-bottom: 2px;
+            }
+
+
+            /* ==============================
+               LOCATION CARD
+               ============================== */
+
+            QFrame#locationPanel {
+                background-color: #0E1D32;
+
+                border: 1px solid #27415F;
+                border-radius: 17px;
+            }
+
+            QComboBox,
+            QLineEdit {
+                background-color: #0B182B;
+
+                color: #F2F5FA;
+
+                border: 1px solid #31557B;
+                border-radius: 11px;
+
+                padding: 9px 11px;
+
+                min-height: 23px;
+
+                selection-background-color: #2563EB;
+                selection-color: white;
+            }
+
+            QComboBox:hover,
+            QLineEdit:hover {
+                border-color: #4778A8;
+            }
+
+            QComboBox:focus,
+            QLineEdit:focus {
+                border: 1px solid #60A5FA;
+            }
+
+            QComboBox::drop-down {
+                border: none;
+                width: 28px;
+            }
+
+            QComboBox QAbstractItemView {
+                background-color: #0F1A30;
+
+                color: #F2F5FA;
+
+                border: 1px solid #2A4364;
+
+                selection-background-color: #2563EB;
+                selection-color: white;
+
+                outline: none;
+
+                padding: 0px;
+                margin: 0px;
+            }
+
+
+            /* ==============================
+               BUTTONS
+               ============================== */
+
+            QPushButton {
+                background-color: #12243B;
+
+                color: #CBE2FF;
+
+                border: 1px solid #2C4D70;
+                border-radius: 10px;
+
+                padding: 8px 12px;
+
+                min-height: 21px;
+
+                font-weight: 600;
+            }
+
+            QPushButton:hover {
+                background-color: #193656;
+                border-color: #60A5FA;
+            }
+
+            QPushButton:pressed {
+                background-color: #21486F;
+            }
+
+            QPushButton:focus {
+                border-color: #93C5FD;
+            }
+
+            QPushButton#locateBtn,
+            QPushButton#navBtn:checked {
+                background:
+                    qlineargradient(
+                        x1:0, y1:0,
+                        x2:1, y2:0,
+                        stop:0 #2563EB,
+                        stop:1 #3B82F6
+                    );
+
+                color: #FFFFFF;
+
+                border: 1px solid #4B8CFF;
+
+                font-weight: 700;
+            }
+
+            QPushButton#locateBtn:hover,
+            QPushButton#navBtn:checked:hover {
+                background-color: #397EF1;
+            }
+
+            QPushButton#locateBtn:pressed {
+                background-color: #1D4ED8;
+            }
+
+            QPushButton:disabled {
+                background-color: #16263B;
+                color: #61758C;
+
+                border-color: #263A52;
+            }
+
+            QPushButton#navBtn {
+                min-height: 28px;
+
+                padding: 10px 0px;
+
+                font-size: 14px;
+                font-weight: 700;
+
+                border-radius: 12px;
+            }
+
+
+            /* ==============================
+               LOCATION INFO
+               ============================== */
+
+            QLabel#locationLabel {
+                color: #8EA8C5;
+                font-size: 11px;
+            }
+
+            QLabel#toastLabel {
+                background-color: #102D43;
+
+                color: #7DD3FC;
+
+                border: 1px solid #205471;
+                border-radius: 10px;
+
+                padding: 8px;
+            }
+
+            QLabel#toastLabel[error="true"] {
+                background-color: #36202C;
+
+                color: #FDA4AF;
+
+                border-color: #653348;
+            }
+
+
+            /* ==============================
+               STATION CARDS
+               ============================== */
+
+            QFrame#stationCard {
+                background-color: #0F1E33;
+
+                border: 1px solid #223D5D;
+                border-radius: 16px;
+            }
+
+            QFrame#stationCard:hover {
+                background-color: #142844;
+
+                border: 1px solid #3B82F6;
+            }
+
+            QLabel#stationName {
+                color: #F8FAFC;
+
+                font-size: 15px;
+                font-weight: 700;
+            }
+
+            QLabel#stationAddress {
+                color: #8199B8;
+                font-size: 11px;
+            }
+
+            QLabel#priceLabel {
+                color: #60A5FA;
+
+                font-size: 16px;
+                font-weight: 800;
+            }
+
+            QLabel#freeLabel {
+                background-color: #0B3B32;
+
+                color: #6EE7B7;
+
+                border: 1px solid #106A55;
+                border-radius: 7px;
+
+                padding: 4px 8px;
+
+                font-size: 11px;
+                font-weight: 700;
+            }
+
+            QLabel#freeLabelFull {
+                background-color: #3B2431;
+
+                color: #FDA4AF;
+
+                border: 1px solid #71394F;
+                border-radius: 7px;
+
+                padding: 4px 8px;
+
+                font-size: 11px;
+            }
+
+
+            /* ==============================
+               SCROLL AREA
+               ============================== */
+
+            QScrollArea#cardScrollArea {
+                background: transparent;
+                border: none;
+            }
+
+            QWidget#cardsContainer {
+                background-color: #08111F;
+            }
+
+            QScrollBar:vertical {
+                background: transparent;
+
+                width: 5px;
+
+                margin: 0px;
+            }
+
+            QScrollBar::handle:vertical {
+                background-color: #345274;
+
+                min-height: 30px;
+
+                border-radius: 2px;
+            }
+
+            QScrollBar::handle:vertical:hover {
+                background-color: #60A5FA;
+            }
+
+            QScrollBar::add-line:vertical,
+            QScrollBar::sub-line:vertical {
+                height: 0px;
+                background: transparent;
+            }
+
+            QScrollBar::add-page:vertical,
+            QScrollBar::sub-page:vertical {
+                background: transparent;
+            }
+
+        )"));
 }
 
 

@@ -10,6 +10,7 @@
 #include <QStyle>
 #include <QTimer>
 #include <QVBoxLayout>
+#include <QListView>
 
 #include "station_card_widget.h"
 
@@ -25,6 +26,88 @@ StationListPage::StationListPage(core::StationService *service, QWidget *parent)
     m_regionCombo->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
     m_regionCombo->setMinimumContentsLength(12);
     m_regionCombo->addItems(m_service->presetRegionNames());
+
+    auto *regionView = new QListView(m_regionCombo);
+
+    regionView->setObjectName(
+        QStringLiteral("regionComboPopup")
+    );
+
+    regionView->setFrameShape(QFrame::NoFrame);
+    regionView->setSpacing(0);
+    regionView->setUniformItemSizes(true);
+
+    regionView->setHorizontalScrollBarPolicy(
+        Qt::ScrollBarAlwaysOff
+    );
+
+    regionView->setVerticalScrollMode(
+        QAbstractItemView::ScrollPerPixel
+    );
+
+    regionView->setStyleSheet(R"(
+        QListView {
+            background-color: #0F1A30;
+            color: #F2F5FA;
+
+            border: 1px solid #2A4364;
+            border-radius: 10px;
+
+            padding: 4px;
+            margin: 0px;
+
+            outline: none;
+        }
+
+        QListView::item {
+            background: transparent;
+            color: #DCEBFF;
+
+            min-height: 38px;
+
+            padding-left: 12px;
+            padding-right: 12px;
+
+            border-radius: 7px;
+        }
+
+        QListView::item:hover {
+            background-color: #18385C;
+            color: #FFFFFF;
+        }
+
+        QListView::item:selected {
+            background-color: #2563EB;
+            color: #FFFFFF;
+        }
+
+        QScrollBar:vertical {
+            background: #0F1A30;
+            width: 6px;
+            margin: 0px;
+        }
+
+        QScrollBar::handle:vertical {
+            background: #365478;
+            border-radius: 3px;
+            min-height: 25px;
+        }
+
+        QScrollBar::add-line:vertical,
+        QScrollBar::sub-line:vertical {
+            height: 0px;
+            background: transparent;
+            border: none;
+        }
+
+        QScrollBar::add-page:vertical,
+        QScrollBar::sub-page:vertical {
+            background: transparent;
+        }
+    )");
+
+    m_regionCombo->setView(regionView);
+    m_regionCombo->setMaxVisibleItems(8);
 
     m_addressEdit = new QLineEdit(this);
     m_addressEdit->setObjectName(QStringLiteral("addressEdit"));

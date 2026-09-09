@@ -20,41 +20,118 @@ bool readChargeSettings(
     int &reservationMinutes,
     QString &errorMessage)
 {
-    minAmount = 5.00;
-    reservationMinutes = 15;
+    constexpr double defaultMinAmount = 5.00;
+    constexpr int defaultReservationMinutes = 15;
+
+    minAmount = defaultMinAmount;
+    reservationMinutes = defaultReservationMinutes;
+    errorMessage.clear();
 
     const QString configPath =
-        core::resolveDataFile(QStringLiteral("config/app.ini"));
+        core::resolveDataFile(
+            QStringLiteral("config/app.ini")
+        );
 
+    // Config missing:
+    // use safe defaults instead of blocking charging.
     if (configPath.isEmpty()) {
+        qWarning()
+            << "[ChargeService] app.ini not found."
+            << "Using default charging configuration.";
+
         return true;
     }
 
-    QSettings settings(configPath, QSettings::IniFormat);
+    QSettings settings(
+        configPath,
+        QSettings::IniFormat
+    );
 
-    bool amountOk = false;
-    bool minutesOk = false;
+    // --------------------------
+    // Minimum start amount
+    // --------------------------
 
-    minAmount = settings.value(
-        "charge/min_start_amount", 5.00
-    ).toDouble(&amountOk);
+    {
+        bool ok = false;
 
-    reservationMinutes = settings.value(
-        "charge/reservation_minutes", 15
-    ).toInt(&minutesOk);
+        const double value =
+            settings.value(
+                QStringLiteral(
+                    "charge/min_start_amount"
+                ),
+                defaultMinAmount
+            ).toDouble(&ok);
 
-    if (settings.status() != QSettings::NoError
-        || !amountOk
-        || !minutesOk
-        || !std::isfinite(minAmount)
-        || minAmount < 0
-        || reservationMinutes <= 0
-        || reservationMinutes
-            > std::numeric_limits<int>::max() / 60) {
-        errorMessage = QStringLiteral(
-            "充电配置无效，请检查最低起充金额和预约分钟数");
-        return false;
+        if (ok
+            && std::isfinite(value)
+            && value >= 0.0) {
+
+            minAmount = value;
+
+        } else {
+
+            qWarning()
+                << "[ChargeService]"
+                << "Invalid min_start_amount."
+                << "Using default:"
+                << defaultMinAmount;
+
+            minAmount = defaultMinAmount;
+        }
     }
+
+    // --------------------------
+    // Reservation minutes
+    // --------------------------
+
+    {
+        bool ok = false;
+
+        const int value =
+            settings.value(
+                QStringLiteral(
+                    "charge/reservation_minutes"
+                ),
+                defaultReservationMinutes
+            ).toInt(&ok);
+
+        if (ok
+            && value > 0
+            && value
+                <= std::numeric_limits<int>::max() / 60) {
+
+            reservationMinutes = value;
+
+        } else {
+
+            qWarning()
+                << "[ChargeService]"
+                << "Invalid reservation_minutes."
+                << "Using default:"
+                << defaultReservationMinutes;
+
+            reservationMinutes =
+                defaultReservationMinutes;
+        }
+    }
+
+    // QSettings sometimes reports a file/status warning.
+    // Do not reject an otherwise usable charging request.
+    if (settings.status() != QSettings::NoError) {
+
+        qWarning()
+            << "[ChargeService]"
+            << "QSettings warning for:"
+            << configPath
+            << "status:"
+            << settings.status();
+    }
+
+    qInfo()
+        << "[ChargeService] configuration:"
+        << "path =" << configPath
+        << "minAmount =" << minAmount
+        << "reservationMinutes =" << reservationMinutes;
 
     return true;
 }
@@ -173,20 +250,46 @@ bool ChargeService::reserveCharger(
     int timeScale = 60;
 
     const QString configPath =
-        resolveDataFile(QStringLiteral("config/app.ini"));
+        resolveDataFile(
+            QStringLiteral("config/app.ini")
+        );
 
     if (!configPath.isEmpty()) {
-        QSettings settings(configPath, QSettings::IniFormat);
+
+        QSettings settings(
+            configPath,
+            QSettings::IniFormat
+        );
 
         bool ok = false;
-        timeScale = settings.value(
-            "charge/time_scale", 60
-        ).toInt(&ok);
 
-        if (!ok || timeScale <= 0
-            || settings.status() != QSettings::NoError) {
-            errorMessage = QStringLiteral("充电时间倍率配置无效");
-            return false;
+        const int configuredScale =
+            settings.value(
+                QStringLiteral("charge/time_scale"),
+                60
+            ).toInt(&ok);
+
+        if (ok && configuredScale > 0) {
+
+            timeScale = configuredScale;
+
+        } else {
+
+            qWarning()
+                << "[ChargeService]"
+                << "Invalid time_scale."
+                << "Using default 60.";
+
+            timeScale = 60;
+        }
+
+        if (settings.status()
+            != QSettings::NoError) {
+
+            qWarning()
+                << "[ChargeService]"
+                << "QSettings warning:"
+                << settings.status();
         }
     }
 

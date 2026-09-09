@@ -40,6 +40,7 @@
 #include <QSplitter>
 #include <QStandardItemModel>
 #include <QStandardItem>
+#include <QListView>
 
 #include <QtCharts/QBarCategoryAxis>
 #include <QtCharts/QBarSeries>
@@ -50,6 +51,114 @@
 #include <QtCharts/QValueAxis>
 #include <QtCharts/QPieSeries>
 #include <QtCharts/QPieSlice>
+
+static void styleAdminCombo(QComboBox *combo)
+{
+    if (!combo) {
+        return;
+    }
+
+    auto *view = new QListView(combo);
+    view->setFrameShape(QFrame::NoFrame);
+    view->setSpacing(2);
+    view->setUniformItemSizes(true);
+
+    combo->setView(view);
+    combo->setMaxVisibleItems(8);
+
+    combo->setStyleSheet(R"(
+
+        QComboBox {
+            background-color: #10233B;
+            color: #EAF3FF;
+
+            border: 1px solid #294B6D;
+            border-radius: 10px;
+
+            padding: 8px 12px;
+
+            min-height: 24px;
+        }
+
+        QComboBox:hover {
+            border-color: #60A5FA;
+        }
+
+        QComboBox:focus {
+            border: 1px solid #60A5FA;
+        }
+
+        QComboBox::drop-down {
+            border: none;
+            width: 28px;
+            subcontrol-origin: padding;
+            subcontrol-position: top right;
+        }
+
+        QComboBox::down-arrow {
+            image: none;
+            width: 0px;
+            height: 0px;
+        }
+
+        QComboBox QAbstractItemView {
+            background-color: #0E1D32;
+            color: #EAF3FF;
+
+            border: 1px solid #294B6D;
+            border-radius: 10px;
+
+            padding: 4px;
+            outline: none;
+
+            selection-background-color: #2563EB;
+            selection-color: #FFFFFF;
+        }
+
+        QComboBox QAbstractItemView::item {
+            min-height: 32px;
+            padding: 6px 10px;
+            border-radius: 6px;
+            color: #EAF3FF;
+            background: transparent;
+        }
+
+        QComboBox QAbstractItemView::item:hover {
+            background-color: #173656;
+            color: #FFFFFF;
+        }
+
+        QComboBox QAbstractItemView::item:selected {
+            background-color: #2563EB;
+            color: #FFFFFF;
+        }
+
+        QScrollBar:vertical {
+            background: #0E1D32;
+            width: 8px;
+            margin: 2px;
+        }
+
+        QScrollBar::handle:vertical {
+            background: #315A82;
+            border-radius: 4px;
+            min-height: 25px;
+        }
+
+        QScrollBar::add-line:vertical,
+        QScrollBar::sub-line:vertical {
+            height: 0px;
+            border: none;
+            background: transparent;
+        }
+
+        QScrollBar::add-page:vertical,
+        QScrollBar::sub-page:vertical {
+            background: transparent;
+        }
+
+    )");
+}
 
 void MainWindow::setupStationManagement()
 {

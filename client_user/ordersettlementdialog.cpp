@@ -44,6 +44,58 @@ QString statusTextOf(int status)
     }
 }
 
+QString statusColorOf(int status)
+{
+    switch (status) {
+    case 0:
+        return QStringLiteral("#60A5FA");
+
+    case 1:
+        return QStringLiteral("#22C55E");
+
+    case 2:
+        return QStringLiteral("#34D399");
+
+    case 3:
+        return QStringLiteral("#FB7185");
+
+    default:
+        return QStringLiteral("#94A3B8");
+    }
+}
+
+
+QString orderRowHtml(
+    const QString &label,
+    const QString &value,
+    const QString &valueColor =
+        QStringLiteral("#F2F5FA"))
+{
+    return QStringLiteral(
+        "<tr>"
+        "<td style=\""
+        "padding:9px 4px;"
+        "color:#8FA9C8;"
+        "font-size:12px;"
+        "\">"
+        "%1"
+        "</td>"
+
+        "<td align=\"right\" style=\""
+        "padding:9px 4px;"
+        "color:%3;"
+        "font-size:13px;"
+        "font-weight:600;"
+        "\">"
+        "%2"
+        "</td>"
+        "</tr>"
+    )
+        .arg(label.toHtmlEscaped())
+        .arg(value.toHtmlEscaped())
+        .arg(valueColor);
+}
+
 } // namespace
 
 OrderSettlementDialog::OrderSettlementDialog(
@@ -72,175 +124,564 @@ OrderSettlementDialog::OrderSettlementDialog(
 
 void OrderSettlementDialog::buildUi()
 {
-    setWindowTitle(QStringLiteral("订单结算"));
-    // 放大弹窗并允许内容滚动，保证下方信息完整可见。
-    resize(440, 700);
-    setMinimumSize(420, 620);
+    setWindowTitle(
+            QStringLiteral("订单结算")
+        );
 
-    setStyleSheet(R"(
-QLabel {
-    color: #E5EFFF;
-    font-size: 13px;
-}
-QLabel#dialogTitle {
-    font-size: 20px;
-    font-weight: bold;
-    color: #FFFFFF;
-}
-QLabel#socLabel {
-    color: #7DD3FC;
-    font-size: 12px;
-}
-QProgressBar {
-    border: 1px solid #264B70;
-    border-radius: 6px;
-    background: #0E1F33;
-    text-align: center;
-    color: #E5EFFF;
-    font-size: 11px;
-    min-height: 14px;
-}
-QProgressBar::chunk {
-    border-radius: 6px;
-    background: #22C55E;
-}
-QPushButton {
-    background: #2563EB;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    padding: 10px;
-    font-size: 13px;
-    min-height: 18px;
-}
-QPushButton:hover {
-    background: #3B82F6;
-}
-QPushButton:disabled {
-    background: #263449;
-    color: #8190A5;
-}
-QPushButton#dangerButton {
-    background: #DC2626;
-}
-QPushButton#dangerButton:hover {
-    background: #EF4444;
-}
-QPushButton#doneButton {
-    background: #22C55E;
-}
-QPushButton#doneButton:hover {
-    background: #4ADE80;
-}
-    )");
+   setFixedSize(420, 720);
 
-    auto *outerLayout = new QVBoxLayout(this);
-    outerLayout->setContentsMargins(18, 16, 18, 16);
-    outerLayout->setSpacing(12);
+   setStyleSheet(R"(
 
-    m_title = new QLabel(QStringLiteral("充电订单"), this);
-    m_title->setObjectName(QStringLiteral("dialogTitle"));
-    outerLayout->addWidget(m_title);
+       QDialog {
+           background-color: #08111F;
+       }
 
-    // 内容放入滚动区：信息超长时也能滚动查看，不再被裁掉。
-    m_scroll = new QScrollArea(this);
-    m_scroll->setWidgetResizable(true);
-    m_scroll->setFrameShape(QFrame::NoFrame);
-    m_scroll->setHorizontalScrollBarPolicy(
-        Qt::ScrollBarAlwaysOff);
+       QLabel {
+           color: #EAF3FF;
+       }
 
-    m_content = new QWidget(m_scroll);
-    auto *contentLayout = new QVBoxLayout(m_content);
-    contentLayout->setContentsMargins(2, 2, 6, 2);
-    contentLayout->setSpacing(8);
+       QLabel#orderBrand {
+           color: #60A5FA;
 
-    m_details = new QLabel(m_content);
-    m_details->setWordWrap(true);
-    m_details->setTextFormat(Qt::PlainText);
-    m_details->setTextInteractionFlags(Qt::TextSelectableByMouse);
-    contentLayout->addWidget(m_details);
+           font-size: 12px;
+           font-weight: 700;
 
-    m_socLabel = new QLabel(QStringLiteral("模拟电量"), m_content);
-    m_socLabel->setObjectName(QStringLiteral("socLabel"));
-    m_socLabel->hide();
-    contentLayout->addWidget(m_socLabel);
+           letter-spacing: 1px;
+       }
 
-    m_socBar = new QProgressBar(m_content);
-    m_socBar->setRange(0, 100);
-    m_socBar->setValue(0);
-    m_socBar->setTextVisible(true);
-    m_socBar->setFormat(QStringLiteral("%p%"));
-    m_socBar->hide();
-    contentLayout->addWidget(m_socBar);
+       QLabel#dialogTitle {
+           color: #FFFFFF;
 
-    m_notice = new QLabel(m_content);
-    m_notice->setWordWrap(true);
-    m_notice->setTextFormat(Qt::PlainText);
-    m_notice->setStyleSheet(QStringLiteral("color: #FB923C;"));
-    contentLayout->addWidget(m_notice);
+           font-size: 25px;
+           font-weight: 800;
+       }
 
-    contentLayout->addStretch();
+       QLabel#dialogSubtitle {
+           color: #7E9AB8;
 
-    m_scroll->setWidget(m_content);
-    outerLayout->addWidget(m_scroll, 1);
+           font-size: 11px;
+       }
 
-    m_refreshButton = new QPushButton(
-        QStringLiteral("刷新订单"), this);
-    outerLayout->addWidget(m_refreshButton);
+       QLabel#detailsCard {
+           background-color: #0E2037;
 
-    m_cancelButton = new QPushButton(
-        QStringLiteral("取消预约"), this);
-    m_cancelButton->setEnabled(false);
-    outerLayout->addWidget(m_cancelButton);
+           color: #F2F5FA;
 
-    m_startButton = new QPushButton(
-        QStringLiteral("开始充电"), this);
-    m_startButton->setEnabled(false);
-    outerLayout->addWidget(m_startButton);
+           border: 1px solid #295078;
+           border-radius: 15px;
 
-    m_finishButton = new QPushButton(
-        QStringLiteral("结束充电"), this);
-    m_finishButton->setObjectName(
-        QStringLiteral("dangerButton"));
-    m_finishButton->setEnabled(false);
-    m_finishButton->hide();
-    outerLayout->addWidget(m_finishButton);
+           padding: 14px;
+       }
 
-    m_doneButton = new QPushButton(
-        QStringLiteral("完成"), this);
-    m_doneButton->setObjectName(QStringLiteral("doneButton"));
-    m_doneButton->hide();
-    outerLayout->addWidget(m_doneButton);
+       QLabel#socLabel {
+           color: #8FC8FF;
 
-    connect(
-        m_refreshButton,
-        &QPushButton::clicked,
-        this,
-        &OrderSettlementDialog::reloadOrder);
+           font-size: 12px;
+           font-weight: 600;
+       }
 
-    connect(
-        m_cancelButton,
-        &QPushButton::clicked,
-        this,
-        &OrderSettlementDialog::onCancelReservation);
+       QLabel#orderNotice {
+           background-color: #2C2119;
 
-    connect(
-        m_startButton,
-        &QPushButton::clicked,
-        this,
-        &OrderSettlementDialog::onStartCharging);
+           color: #FB923C;
 
-    connect(
-        m_finishButton,
-        &QPushButton::clicked,
-        this,
-        &OrderSettlementDialog::onFinishCharging);
+           border: 1px solid #7A4821;
+           border-radius: 11px;
 
-    connect(
-        m_doneButton,
-        &QPushButton::clicked,
-        this,
-        &QDialog::accept);
+           padding: 11px;
+
+           font-size: 12px;
+           font-weight: 600;
+       }
+
+
+       QScrollArea {
+           background: transparent;
+           border: none;
+       }
+
+       QWidget#orderContent {
+           background-color: #08111F;
+       }
+
+
+       QProgressBar {
+           background-color: #0D1B2E;
+
+           border: 1px solid #294C70;
+           border-radius: 7px;
+
+           color: #DCEBFF;
+
+           text-align: center;
+
+           min-height: 16px;
+       }
+
+       QProgressBar::chunk {
+           background:
+               qlineargradient(
+                   x1:0, y1:0,
+                   x2:1, y2:0,
+                   stop:0 #2563EB,
+                   stop:1 #22C55E
+               );
+
+           border-radius: 6px;
+       }
+
+
+       QPushButton {
+           min-height: 42px;
+
+           border-radius: 10px;
+
+           font-size: 14px;
+           font-weight: 700;
+       }
+
+
+       QPushButton#refreshButton {
+           background-color: #173A62;
+
+           color: #DCEBFF;
+
+           border: 1px solid #34699B;
+       }
+
+       QPushButton#refreshButton:hover {
+           background-color: #215083;
+       }
+
+
+       QPushButton#cancelButton {
+           background-color: #10233B;
+
+           color: #78B9FF;
+
+           border: 1px solid #3479BE;
+       }
+
+       QPushButton#cancelButton:hover {
+           background-color: #173B60;
+       }
+
+
+       QPushButton#startButton {
+           background:
+               qlineargradient(
+                   x1:0, y1:0,
+                   x2:1, y2:0,
+                   stop:0 #2563EB,
+                   stop:1 #2688FF
+               );
+
+           color: white;
+
+           border: 1px solid #4B91FF;
+       }
+
+       QPushButton#startButton:hover {
+           background-color: #397EF1;
+       }
+
+
+       QPushButton#dangerButton {
+           background-color: #B91C1C;
+
+           color: white;
+
+           border: 1px solid #EF4444;
+       }
+
+       QPushButton#dangerButton:hover {
+           background-color: #DC2626;
+       }
+
+
+       QPushButton#doneButton {
+           background-color: #059669;
+
+           color: white;
+
+           border: 1px solid #34D399;
+       }
+
+       QPushButton#doneButton:hover {
+           background-color: #10B981;
+       }
+
+
+       QPushButton:disabled {
+           background-color: #172638;
+
+           color: #64748B;
+
+           border: 1px solid #263A52;
+       }
+
+   )");
+
+
+   auto *outerLayout =
+       new QVBoxLayout(this);
+
+   outerLayout->setContentsMargins(
+       16, 14, 16, 16
+   );
+
+   outerLayout->setSpacing(10);
+
+
+   // ==============================
+   // Header
+   // ==============================
+
+   auto *brand =
+       new QLabel(
+           QStringLiteral(
+               "⚡  NCS CHARGE"
+           ),
+           this
+       );
+
+   brand->setObjectName(
+       QStringLiteral("orderBrand")
+   );
+
+   brand->setAlignment(
+       Qt::AlignCenter
+   );
+
+
+   m_title =
+       new QLabel(
+           QStringLiteral("充电订单"),
+           this
+       );
+
+   m_title->setObjectName(
+       QStringLiteral("dialogTitle")
+   );
+
+   m_title->setAlignment(
+       Qt::AlignCenter
+   );
+
+
+   auto *subtitle =
+       new QLabel(
+           QStringLiteral(
+               "SMART CHARGING PLATFORM"
+           ),
+           this
+       );
+
+   subtitle->setObjectName(
+       QStringLiteral(
+           "dialogSubtitle"
+       )
+   );
+
+   subtitle->setAlignment(
+       Qt::AlignCenter
+   );
+
+
+   outerLayout->addWidget(brand);
+   outerLayout->addWidget(m_title);
+   outerLayout->addWidget(subtitle);
+
+   outerLayout->addSpacing(4);
+
+
+   // ==============================
+   // Scroll area
+   // ==============================
+
+   m_scroll = new QScrollArea(this);
+
+   m_scroll->setWidgetResizable(true);
+
+   m_scroll->setFrameShape(
+       QFrame::NoFrame
+   );
+
+   m_scroll->setHorizontalScrollBarPolicy(
+       Qt::ScrollBarAlwaysOff
+   );
+
+
+   m_content =
+       new QWidget(m_scroll);
+
+   m_content->setObjectName(
+       QStringLiteral(
+           "orderContent"
+       )
+   );
+
+
+   auto *contentLayout =
+       new QVBoxLayout(m_content);
+
+   contentLayout->setContentsMargins(
+       1, 1, 5, 1
+   );
+
+   contentLayout->setSpacing(10);
+
+
+   m_details =
+       new QLabel(m_content);
+
+   m_details->setObjectName(
+       QStringLiteral(
+           "detailsCard"
+       )
+   );
+
+   m_details->setWordWrap(true);
+
+   m_details->setTextFormat(
+       Qt::RichText
+   );
+
+   m_details->setTextInteractionFlags(
+       Qt::TextSelectableByMouse
+   );
+
+   m_details->setAlignment(
+       Qt::AlignTop
+   );
+
+   contentLayout->addWidget(
+       m_details
+   );
+
+
+   // ==============================
+   // Charging progress
+   // ==============================
+
+   m_socLabel =
+       new QLabel(
+           QStringLiteral("模拟电量"),
+           m_content
+       );
+
+   m_socLabel->setObjectName(
+       QStringLiteral("socLabel")
+   );
+
+   m_socLabel->hide();
+
+   contentLayout->addWidget(
+       m_socLabel
+   );
+
+
+   m_socBar =
+       new QProgressBar(m_content);
+
+   m_socBar->setRange(0, 100);
+   m_socBar->setValue(0);
+   m_socBar->setTextVisible(true);
+
+   m_socBar->setFormat(
+       QStringLiteral("%p%")
+   );
+
+   m_socBar->hide();
+
+   contentLayout->addWidget(
+       m_socBar
+   );
+
+
+   // ==============================
+   // Notice
+   // ==============================
+
+   m_notice =
+       new QLabel(m_content);
+
+   m_notice->setObjectName(
+       QStringLiteral(
+           "orderNotice"
+       )
+   );
+
+   m_notice->setWordWrap(true);
+
+   m_notice->setAlignment(
+       Qt::AlignCenter
+   );
+
+   contentLayout->addWidget(
+       m_notice
+   );
+
+
+   contentLayout->addStretch();
+
+   m_scroll->setWidget(
+       m_content
+   );
+
+   outerLayout->addWidget(
+       m_scroll,
+       1
+   );
+
+
+   // ==============================
+   // Action buttons
+   // ==============================
+
+   m_refreshButton =
+       new QPushButton(
+           QStringLiteral(
+               "↻  刷新订单"
+           ),
+           this
+       );
+
+   m_refreshButton->setObjectName(
+       QStringLiteral(
+           "refreshButton"
+       )
+   );
+
+
+   m_cancelButton =
+       new QPushButton(
+           QStringLiteral(
+               "✕  取消预约"
+           ),
+           this
+       );
+
+   m_cancelButton->setObjectName(
+       QStringLiteral(
+           "cancelButton"
+       )
+   );
+
+   m_cancelButton->setEnabled(false);
+
+
+   m_startButton =
+       new QPushButton(
+           QStringLiteral(
+               "⚡  开始充电"
+           ),
+           this
+       );
+
+   m_startButton->setObjectName(
+       QStringLiteral(
+           "startButton"
+       )
+   );
+
+   m_startButton->setEnabled(false);
+
+
+   m_finishButton =
+       new QPushButton(
+           QStringLiteral(
+               "结束充电"
+           ),
+           this
+       );
+
+   m_finishButton->setObjectName(
+       QStringLiteral(
+           "dangerButton"
+       )
+   );
+
+   m_finishButton->setEnabled(false);
+   m_finishButton->hide();
+
+
+   m_doneButton =
+       new QPushButton(
+           QStringLiteral(
+               "完成"
+           ),
+           this
+       );
+
+   m_doneButton->setObjectName(
+       QStringLiteral(
+           "doneButton"
+       )
+   );
+
+   m_doneButton->hide();
+
+
+   outerLayout->addWidget(
+       m_refreshButton
+   );
+
+   outerLayout->addWidget(
+       m_cancelButton
+   );
+
+   outerLayout->addWidget(
+       m_startButton
+   );
+
+   outerLayout->addWidget(
+       m_finishButton
+   );
+
+   outerLayout->addWidget(
+       m_doneButton
+   );
+
+
+   // ==============================
+   // Existing logic
+   // ==============================
+
+   connect(
+       m_refreshButton,
+       &QPushButton::clicked,
+       this,
+       &OrderSettlementDialog::reloadOrder
+   );
+
+   connect(
+       m_cancelButton,
+       &QPushButton::clicked,
+       this,
+       &OrderSettlementDialog::onCancelReservation
+   );
+
+   connect(
+       m_startButton,
+       &QPushButton::clicked,
+       this,
+       &OrderSettlementDialog::onStartCharging
+   );
+
+   connect(
+       m_finishButton,
+       &QPushButton::clicked,
+       this,
+       &OrderSettlementDialog::onFinishCharging
+   );
+
+   connect(
+       m_doneButton,
+       &QPushButton::clicked,
+       this,
+       &QDialog::accept
+   );
 }
 
 void OrderSettlementDialog::reloadOrder()
@@ -274,52 +715,138 @@ void OrderSettlementDialog::reloadOrder()
         }
     }
 
-    const QString startText = info.startTime.isEmpty()
-        ? QStringLiteral("尚未开始")
-        : info.startTime;
+    const QString startText =
+        info.startTime.isEmpty()
+            ? QStringLiteral("尚未开始")
+            : info.startTime;
 
-    QString text = QStringLiteral(
-        "订单编号：%1\n"
-        "电站：%2\n"
-        "电桩编号：%3\n"
-        "订单状态：%4\n"
-        "开始时间：%5"
-    )
-        .arg(info.id)
-        .arg(info.stationName)
-        .arg(info.chargerNo)
-        .arg(statusTextOf(info.status))
-        .arg(startText);
+
+    QString html =
+        QStringLiteral(
+            "<div style=\""
+            "color:#FFFFFF;"
+            "font-size:16px;"
+            "font-weight:700;"
+            "margin-bottom:8px;"
+            "\">"
+            "订单详情"
+            "</div>"
+
+            "<table width=\"100%\" "
+            "cellspacing=\"0\" "
+            "cellpadding=\"0\">"
+        );
+
+
+    html += orderRowHtml(
+        QStringLiteral("订单编号"),
+        QString::number(info.id)
+    );
+
+
+    html += orderRowHtml(
+        QStringLiteral("电站"),
+        info.stationName
+    );
+
+
+    html += orderRowHtml(
+        QStringLiteral("电桩编号"),
+        info.chargerNo
+    );
+
+
+    html += orderRowHtml(
+        QStringLiteral("订单状态"),
+        statusTextOf(info.status),
+        statusColorOf(info.status)
+    );
+
+
+    html += orderRowHtml(
+        QStringLiteral("开始时间"),
+        startText
+    );
+
 
     if (info.status == 0) {
-        text += QStringLiteral(
-            "\n预约保留至：%1"
-            "\n超时未开始将自动取消并释放电桩。")
-            .arg(info.reservationExpiresAt.isEmpty()
-                     ? QStringLiteral("—")
-                     : info.reservationExpiresAt);
+        html += orderRowHtml(
+            QStringLiteral("预约保留至"),
+            info.reservationExpiresAt.isEmpty()
+                ? QStringLiteral("—")
+                : info.reservationExpiresAt
+        );
     }
+
 
     if (info.status == 1) {
-        text += QStringLiteral(
-            "\n模拟充电时长：%1"
-            "\n模拟功率：%2 kW"
-            "\n单价：%3 元/度")
-            .arg(formatDuration(info.simulatedSeconds))
-            .arg(info.power, 0, 'f', 1)
-            .arg(info.price, 0, 'f', 2);
+
+        html += orderRowHtml(
+            QStringLiteral("模拟充电时长"),
+            formatDuration(
+                info.simulatedSeconds
+            )
+        );
+
+        html += orderRowHtml(
+            QStringLiteral("模拟功率"),
+            QStringLiteral("%1 kW")
+                .arg(
+                    info.power,
+                    0,
+                    'f',
+                    1
+                )
+        );
+
+        html += orderRowHtml(
+            QStringLiteral("单价"),
+            QStringLiteral("%1 元/度")
+                .arg(
+                    info.price,
+                    0,
+                    'f',
+                    2
+                )
+        );
     }
 
-    text += QStringLiteral(
-        "\n累计电量：%1 度"
-        "\n%2：%3 元")
-        .arg(info.energy, 0, 'f', 2)
-        .arg(info.status == 1
-                 ? QStringLiteral("当前费用")
-                 : QStringLiteral("订单金额"))
-        .arg(info.amount, 0, 'f', 2);
 
-    m_details->setText(text);
+    html += orderRowHtml(
+        QStringLiteral("累计电量"),
+        QStringLiteral("%1 度")
+            .arg(
+                info.energy,
+                0,
+                'f',
+                2
+            )
+    );
+
+
+    html += orderRowHtml(
+        info.status == 1
+            ? QStringLiteral("当前费用")
+            : QStringLiteral("订单金额"),
+
+        QStringLiteral("%1 元")
+            .arg(
+                info.amount,
+                0,
+                'f',
+                2
+            ),
+
+        QStringLiteral("#60A5FA")
+    );
+
+
+    html += QStringLiteral(
+        "</table>"
+    );
+
+
+    m_details->setText(html);
 
     // 充电中显示模拟 SoC 进度条（按 1 模拟小时充满估算）。
     const bool isCharging = (info.status == 1);
@@ -565,52 +1092,173 @@ void OrderSettlementDialog::showReceipt(
 
     m_title->setText(QStringLiteral("结算小票"));
 
-    QString text = QStringLiteral(
-        "订单号：%1\n"
-        "电站：%2\n"
-        "电桩编号：%3\n"
-        "开始时间：%4\n"
-        "结束时间：%5\n"
-        "充电时长：%6\n"
-        "电量：%7 度\n"
-        "单价：%8 元/度\n"
-        "总金额：%9 元")
-        .arg(receipt.orderId)
-        .arg(receipt.stationName.isEmpty()
-                 ? QStringLiteral("—")
-                 : receipt.stationName)
-        .arg(receipt.chargerNo.isEmpty()
-                 ? QStringLiteral("—")
-                 : receipt.chargerNo)
-        .arg(receipt.startTime.isEmpty()
-                 ? QStringLiteral("—")
-                 : receipt.startTime)
-        .arg(receipt.endTime.isEmpty()
-                 ? QStringLiteral("—")
-                 : receipt.endTime)
-        .arg(formatDuration(receipt.simulatedSeconds))
-        .arg(receipt.energy, 0, 'f', 2)
-        .arg(receipt.unitPrice, 0, 'f', 2)
-        .arg(receipt.amount, 0, 'f', 2);
+    QString html =
+        QStringLiteral(
+            "<div style=\""
+            "color:#FFFFFF;"
+            "font-size:16px;"
+            "font-weight:700;"
+            "margin-bottom:8px;"
+            "\">"
+            "充电结算"
+            "</div>"
+
+            "<table width=\"100%\" "
+            "cellspacing=\"0\" "
+            "cellpadding=\"0\">"
+        );
+
+
+    html += orderRowHtml(
+        QStringLiteral("订单编号"),
+        QString::number(
+            receipt.orderId
+        )
+    );
+
+
+    html += orderRowHtml(
+        QStringLiteral("电站"),
+        receipt.stationName.isEmpty()
+            ? QStringLiteral("—")
+            : receipt.stationName
+    );
+
+
+    html += orderRowHtml(
+        QStringLiteral("电桩编号"),
+        receipt.chargerNo.isEmpty()
+            ? QStringLiteral("—")
+            : receipt.chargerNo
+    );
+
+
+    html += orderRowHtml(
+        QStringLiteral("开始时间"),
+        receipt.startTime.isEmpty()
+            ? QStringLiteral("—")
+            : receipt.startTime
+    );
+
+
+    html += orderRowHtml(
+        QStringLiteral("结束时间"),
+        receipt.endTime.isEmpty()
+            ? QStringLiteral("—")
+            : receipt.endTime
+    );
+
+
+    html += orderRowHtml(
+        QStringLiteral("充电时长"),
+        formatDuration(
+            receipt.simulatedSeconds
+        )
+    );
+
+
+    html += orderRowHtml(
+        QStringLiteral("充电电量"),
+        QStringLiteral("%1 度")
+            .arg(
+                receipt.energy,
+                0,
+                'f',
+                2
+            )
+    );
+
+
+    html += orderRowHtml(
+        QStringLiteral("充电单价"),
+        QStringLiteral("%1 元/度")
+            .arg(
+                receipt.unitPrice,
+                0,
+                'f',
+                2
+            )
+    );
+
+
+    html += orderRowHtml(
+        QStringLiteral("订单金额"),
+        QStringLiteral("%1 元")
+            .arg(
+                receipt.amount,
+                0,
+                'f',
+                2
+            ),
+
+        QStringLiteral("#60A5FA")
+    );
+
 
     if (receipt.paidAmount >= 0) {
-        text += QStringLiteral(
-            "\n实际扣款：%1 元"
-            "\n扣款后余额：%2 元")
-            .arg(receipt.paidAmount, 0, 'f', 2)
-            .arg(receipt.balanceAfter, 0, 'f', 2);
+
+        html += orderRowHtml(
+            QStringLiteral("实际扣款"),
+            QStringLiteral("%1 元")
+                .arg(
+                    receipt.paidAmount,
+                    0,
+                    'f',
+                    2
+                ),
+
+            QStringLiteral("#34D399")
+        );
+
+
+        html += orderRowHtml(
+            QStringLiteral("扣款后余额"),
+            QStringLiteral("%1 元")
+                .arg(
+                    receipt.balanceAfter,
+                    0,
+                    'f',
+                    2
+                )
+        );
+
 
         if (receipt.debtAmount > 0) {
-            text += QStringLiteral(
-                "\n本次欠费：%1 元（请及时充值）")
-                .arg(receipt.debtAmount, 0, 'f', 2);
+
+            html += orderRowHtml(
+                QStringLiteral("本次欠费"),
+                QStringLiteral("%1 元")
+                    .arg(
+                        receipt.debtAmount,
+                        0,
+                        'f',
+                        2
+                    ),
+
+                QStringLiteral("#FB7185")
+            );
         }
+
     } else {
-        text += QStringLiteral(
-            "\n扣款后余额：结算时确定");
+
+        html += orderRowHtml(
+            QStringLiteral("扣款后余额"),
+            QStringLiteral("结算时确定")
+        );
     }
 
-    m_details->setText(text);
+
+    html += QStringLiteral(
+        "</table>"
+    );
+
+
+    m_details->setText(html);
+
+    m_details->setAlignment(
+        Qt::AlignLeft |
+        Qt::AlignTop
+    );
     m_details->setAlignment(Qt::AlignLeft | Qt::AlignTop);
 
     m_socLabel->hide();
