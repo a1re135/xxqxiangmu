@@ -503,7 +503,7 @@ QStatusBar{background:#08111E;color:#61717C;border-top:1px solid #1E2D39;}
            <property name="spacing"><number>16</number></property>
            <item>
             <layout class="QHBoxLayout" name="metricsLayout">
-             <property name="spacing"><number>16</number></property>
+             <property name="spacing"><number>24</number></property>
              <item>
               <widget class="QFrame" name="metricCard1">
                <property name="minimumSize"><size><width>0</width><height>132</height></size></property>
@@ -541,7 +541,7 @@ QStatusBar{background:#08111E;color:#61717C;border-top:1px solid #1E2D39;}
            </item>
            <item>
             <widget class="QFrame" name="chartCard">
-             <property name="minimumSize"><size><width>0</width><height>300</height></size></property>
+             <property name="minimumSize"><size><width>0</width><height>260</height></size></property>
              <layout class="QVBoxLayout" name="chartLayout">
               <property name="leftMargin"><number>20</number></property><property name="topMargin"><number>16</number></property><property name="rightMargin"><number>20</number></property><property name="bottomMargin"><number>14</number></property><property name="spacing"><number>8</number></property>
               <item>
@@ -552,18 +552,18 @@ QStatusBar{background:#08111E;color:#61717C;border-top:1px solid #1E2D39;}
                 <item><widget class="QPushButton" name="period30Button"><property name="minimumSize"><size><width>92</width><height>40</height></size></property><property name="text"><string>近 30 日</string></property><property name="checkable"><bool>true</bool></property><property name="checked"><bool>true</bool></property></widget></item>
                </layout>
               </item>
-              <item><widget class="QFrame" name="revenueChartHost"><property name="minimumSize"><size><width>0</width><height>210</height></size></property><property name="frameShape"><enum>QFrame::NoFrame</enum></property></widget></item>
+              <item><widget class="QFrame" name="revenueChartHost"><property name="minimumSize"><size><width>0</width><height>175</height></size></property><property name="frameShape"><enum>QFrame::NoFrame</enum></property></widget></item>
               <item><widget class="QLabel" name="queryPerformanceLabel"><property name="text"><string>30天聚合查询：-- ms · 目标 &lt; 300 ms</string></property></widget></item>
              </layout>
             </widget>
            </item>
            <item>
             <widget class="QFrame" name="orderChartCard">
-             <property name="minimumSize"><size><width>0</width><height>270</height></size></property>
+             <property name="minimumSize"><size><width>0</width><height>230</height></size></property>
              <layout class="QVBoxLayout" name="orderChartLayout">
               <property name="leftMargin"><number>20</number></property><property name="topMargin"><number>15</number></property><property name="rightMargin"><number>20</number></property><property name="bottomMargin"><number>12</number></property><property name="spacing"><number>6</number></property>
               <item><widget class="QLabel" name="orderChartTitle"><property name="text"><string>近 30 日每日订单量</string></property></widget></item>
-              <item><widget class="QFrame" name="orderChartHost"><property name="minimumSize"><size><width>0</width><height>205</height></size></property><property name="frameShape"><enum>QFrame::NoFrame</enum></property></widget></item>
+              <item><widget class="QFrame" name="orderChartHost"><property name="minimumSize"><size><width>0</width><height>165</height></size></property><property name="frameShape"><enum>QFrame::NoFrame</enum></property></widget></item>
              </layout>
             </widget>
            </item>

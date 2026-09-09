@@ -37,6 +37,38 @@
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
+    a.setStyleSheet(a.styleSheet() + QStringLiteral(R"(
+
+        QMessageBox {
+            background-color: #0B1524;
+        }
+
+        QMessageBox QLabel {
+            background-color: transparent;
+            color: #EAF3FF;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        QMessageBox QPushButton {
+            background-color: #10233B;
+            color: #DCEBFF;
+            border: 1px solid #315A82;
+            border-radius: 7px;
+            padding: 6px 16px;
+            font-weight: 700;
+        }
+
+        QMessageBox QPushButton:hover {
+            background-color: #173656;
+            border-color: #10B981;
+        }
+
+        QMessageBox QPushButton:pressed {
+            background-color: #0F2B45;
+        }
+
+    )"));
     QCoreApplication::setOrganizationName(QStringLiteral("NCS"));
     QCoreApplication::setApplicationName(QStringLiteral("NCS_Charging_Platform"));
     NcsLogger::install();
