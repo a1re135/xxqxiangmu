@@ -19,3 +19,9 @@ logs/
 *.tmp
 *.swp
 *~
+
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
