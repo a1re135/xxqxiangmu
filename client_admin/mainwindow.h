@@ -43,6 +43,7 @@ class QPushButton;
 class QProgressDialog;
 class QSortFilterProxyModel;
 class QSpinBox;
+class QProcess;
 
 class MainWindow : public QMainWindow
 {
@@ -99,6 +100,8 @@ private:
     void setupPredictionPage();
     void refreshPredictionPage();
     void runPrediction();
+    void runPredictionEvaluation();
+    void loadEvaluationResults();
 
     Ui::MainWindow *ui;
     AdminAuthService::AdminInfo m_currentAdmin;
@@ -155,8 +158,9 @@ private:
 
     QComboBox *m_predictionStationCombo = nullptr;
 
-    QPushButton *m_prediction7Button = nullptr;
-    QPushButton *m_prediction30Button = nullptr;
+    QPushButton *m_prediction1Button = nullptr;
+    QPushButton *m_prediction6Button = nullptr;
+    QPushButton *m_prediction24Button = nullptr;
     QPushButton *m_runPredictionButton = nullptr;
 
     QLabel *m_predictionTotalLabel = nullptr;
@@ -166,7 +170,16 @@ private:
     QChartView *m_predictionChartView = nullptr;
     QTableWidget *m_predictionTable = nullptr;
 
-    int m_predictionDays = 7;
+    QChartView *m_evaluationChartView = nullptr;
+    QTableWidget *m_evaluationTable = nullptr;
+
+    QPushButton *m_runEvaluationButton = nullptr;
+
+    QProcess *m_evaluationProcess = nullptr;
+
+    int m_predictionHours = 6;
+
+    QProcess *m_predictionProcess = nullptr;
 
     QTimer *m_autoRefreshTimer = nullptr;
 };

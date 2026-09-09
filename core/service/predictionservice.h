@@ -26,7 +26,7 @@ public:
         int stationId = 0;
         QString stationName;
 
-        int predictionDays = 7;
+        int predictionHours = 6;
 
         double totalPredictedLoad = 0.0;
         double averageDailyLoad = 0.0;
@@ -46,7 +46,7 @@ public:
 
     bool loadLatestPrediction(
         int stationId,
-        int days,
+        int hours,
         PredictionSummary &outSummary,
         QString &errorMessage
     ) const;

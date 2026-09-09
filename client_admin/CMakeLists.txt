@@ -54,6 +54,11 @@ target_link_libraries(client_admin
         ncs_core
 )
 
+target_compile_definitions(client_admin
+    PRIVATE
+        NCS_PROJECT_ROOT="${CMAKE_SOURCE_DIR}"
+)
+
 set_target_properties(client_admin PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER my.example.com
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}

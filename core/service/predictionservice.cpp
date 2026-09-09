@@ -46,7 +46,7 @@ bool PredictionService::generatePrediction(
         return false;
     }
 
-    const int predictionDays =
+    const int predictionHours =
         (days == 30) ? 30 : 7;
 
     QSqlDatabase db = connection();
@@ -335,14 +335,14 @@ bool PredictionService::generatePrediction(
 
     QVector<PredictionPoint> points;
 
-    points.reserve(predictionDays);
+    points.reserve(predictionHours);
 
     double totalPrediction = 0.0;
     double peakLoad = -1.0;
     int peakIndex = -1;
 
     for (int i = 0;
-         i < predictionDays;
+         i < predictionHours;
          ++i) {
 
         const QDate futureDate =
@@ -446,9 +446,9 @@ bool PredictionService::generatePrediction(
     // --------------------------------------------------
 
     const double predictionAverage =
-        predictionDays > 0
+        predictionHours > 0
             ? totalPrediction
-                / static_cast<double>(predictionDays)
+                / static_cast<double>(predictionHours)
             : 0.0;
 
     for (int i = 0;
@@ -568,8 +568,8 @@ bool PredictionService::generatePrediction(
     outSummary.stationName =
         stationName;
 
-    outSummary.predictionDays =
-        predictionDays;
+    outSummary.predictionHours =
+        predictionHours;
 
     outSummary.totalPredictedLoad =
         totalPrediction;
@@ -598,7 +598,7 @@ bool PredictionService::generatePrediction(
 
 bool PredictionService::loadLatestPrediction(
     int stationId,
-    int days,
+    int hours,
     PredictionSummary &outSummary,
     QString &errorMessage
 ) const
@@ -612,8 +612,10 @@ bool PredictionService::loadLatestPrediction(
         return false;
     }
 
-    const int predictionDays =
-        (days == 30) ? 30 : 7;
+    const int predictionHours =
+        (hours == 1 || hours == 6 || hours == 24)
+            ? hours
+            : 6;
 
     QSqlDatabase db = connection();
 
@@ -633,9 +635,23 @@ bool PredictionService::loadLatestPrediction(
         QSqlQuery query(db);
 
         query.prepare(
-            "SELECT MAX(generated_time) "
+            "SELECT generated_time "
             "FROM load_prediction "
-            "WHERE station_id = :stationId"
+            "WHERE station_id = :stationId "
+            "GROUP BY generated_time "
+            "HAVING COUNT(*) >= :requiredRows "
+            "ORDER BY generated_time DESC "
+            "LIMIT 1"
+        );
+
+        query.bindValue(
+            ":stationId",
+            stationId
+        );
+
+        query.bindValue(
+            ":requiredRows",
+            predictionHours
         );
 
         query.bindValue(
@@ -729,7 +745,7 @@ bool PredictionService::loadLatestPrediction(
 
     query.bindValue(
         ":limit",
-        predictionDays
+        predictionHours
     );
 
     if (!query.exec()) {
@@ -811,7 +827,7 @@ bool PredictionService::loadLatestPrediction(
     outSummary.stationName =
         stationName;
 
-    outSummary.predictionDays =
+    outSummary.predictionHours =
         points.size();
 
     outSummary.totalPredictedLoad =
