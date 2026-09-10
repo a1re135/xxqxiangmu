@@ -400,7 +400,7 @@ def main():
     ]
 
 
-    # ==========================================
+        # ==========================================
     # Train RandomForest
     # ==========================================
 
@@ -411,13 +411,78 @@ def main():
         "Training RandomForestRegressor..."
     )
 
+
+    # ==========================================
+    # Sample weights for sparse charging data
+    # ==========================================
+
+    positive_mask = (
+        y_train > 0
+    )
+
+    positive_count = int(
+        positive_mask.sum()
+    )
+
+    zero_count = int(
+        (~positive_mask).sum()
+    )
+
+
+    if positive_count > 0:
+
+        positive_weight = min(
+            20.0,
+            max(
+                1.0,
+                np.sqrt(
+                    zero_count
+                    / positive_count
+                )
+            ),
+        )
+
+    else:
+
+        positive_weight = 1.0
+
+
+    sample_weights = np.ones(
+        len(y_train),
+        dtype=float,
+    )
+
+    sample_weights[
+        positive_mask.to_numpy()
+    ] = positive_weight
+
+
+    print()
+
+    print(
+        "Non-zero training rows:",
+        positive_count,
+        "/",
+        len(y_train),
+    )
+
+    print(
+        "Positive sample weight:",
+        f"{positive_weight:.2f}"
+    )
+
+
     pipeline.fit(
         x_train,
         y_train,
+        model__sample_weight=sample_weights,
     )
 
 
     # ==========================================
+    # Evaluate
+    # ==========================================
+        # ==========================================
     # Evaluate
     # ==========================================
 
@@ -431,6 +496,72 @@ def main():
         0.0,
     )
 
+
+    # ==========================================
+    # Zero-threshold diagnostic
+    # ==========================================
+
+    print()
+    print("=" * 72)
+    print("Zero-threshold diagnostic")
+    print("=" * 72)
+
+    for threshold in [
+        0.0,
+        0.1,
+        0.25,
+        0.5,
+        0.75,
+        1.0,
+        1.5,
+        2.0,
+        3.0,
+        5.0,
+    ]:
+
+        threshold_predictions = (
+            predictions.copy()
+        )
+
+        threshold_predictions[
+            threshold_predictions
+            < threshold
+        ] = 0.0
+
+        threshold_mae = mean_absolute_error(
+            y_test,
+            threshold_predictions,
+        )
+
+        threshold_rmse = np.sqrt(
+            mean_squared_error(
+                y_test,
+                threshold_predictions,
+            )
+        )
+
+        threshold_mape = calculate_mape(
+            y_test.to_numpy(),
+            threshold_predictions,
+        )
+
+        threshold_wmape = calculate_wmape(
+            y_test.to_numpy(),
+            threshold_predictions,
+        )
+
+        print(
+            f"threshold={threshold:>4.2f} "
+            f"MAE={threshold_mae:>8.4f} "
+            f"RMSE={threshold_rmse:>8.4f} "
+            f"MAPE={threshold_mape:>7.2f}% "
+            f"WMAPE={threshold_wmape:>7.2f}%"
+        )
+
+
+    # ==========================================
+    # RandomForest metrics
+    # ==========================================
 
     mae = mean_absolute_error(
         y_test,
@@ -454,7 +585,8 @@ def main():
         predictions,
     )
 
-        # ==========================================
+
+    # ==========================================
     # Naive baseline:
     # same hour one week ago
     # ==========================================

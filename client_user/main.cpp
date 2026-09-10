@@ -1,18 +1,27 @@
 #include "mainwindow.h"
 #include "loginwindow.h"
 #include "personalhomepage.h"
-
 #include "ui/station_list_page.h"
-
 #include "database/databasemanager.h"
 #include "service/stationservice.h"
-
+#include "logging/ncslogger.h"
 #include <QApplication>
+#include <QCoreApplication>
 #include <QMessageBox>
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
+
+    QCoreApplication::setOrganizationName(
+           QStringLiteral("NCS")
+       );
+
+       QCoreApplication::setApplicationName(
+           QStringLiteral("NCS_Charging_Platform")
+       );
+
+       NcsLogger::install();
 
     // =========================================================
     // Database
@@ -20,10 +29,44 @@ int main(int argc, char *argv[])
     DatabaseManager databaseManager;
 
     if (!databaseManager.initialize()) {
+
+        QString message;
+
+        if (databaseManager.isCorrupted()) {
+
+            message =
+                QStringLiteral(
+                    "数据库文件已损坏，"
+                    "程序无法安全启动。\n\n"
+                    "%1\n\n"
+                    "请恢复数据库备份，"
+                    "或删除损坏的数据库后重新启动程序。"
+                ).arg(
+                    databaseManager
+                        .lastErrorMessage()
+                );
+
+        } else {
+
+            message =
+                databaseManager
+                        .lastErrorMessage()
+                        .isEmpty()
+                    ? QStringLiteral(
+                          "数据库初始化失败，"
+                          "请检查数据库文件和权限。"
+                      )
+                    : databaseManager
+                          .lastErrorMessage();
+        }
+
+
         QMessageBox::critical(
             nullptr,
-            QStringLiteral("数据库错误"),
-            QStringLiteral("数据库初始化失败，请检查数据库文件和权限。")
+            databaseManager.isCorrupted()
+                ? QStringLiteral("数据库损坏")
+                : QStringLiteral("数据库错误"),
+            message
         );
 
         return -1;

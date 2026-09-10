@@ -1719,10 +1719,6 @@ void MainWindow::runPrediction()
     arguments
         << scriptPath
         << QStringLiteral("refresh")
-        << QStringLiteral("--station")
-        << QString::number(
-               stationId
-           )
         << QStringLiteral("--horizon")
         << QString::number(
                m_predictionHours
@@ -1793,7 +1789,7 @@ void MainWindow::runPrediction()
                 QStringLiteral("预测完成"),
                 QStringLiteral(
                     "模型已重新训练，"
-                    "并完成未来 %1 小时预测。"
+                    "并完成所有电站未来 %1 小时预测。"
                 ).arg(
                     m_predictionHours
                 )

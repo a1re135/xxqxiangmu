@@ -66,6 +66,9 @@ add_library(ncs_core STATIC
     util/logger.h
 
     util/app_paths.h
+
+    network/chargercommandclient.h
+    network/chargercommandclient.cpp
 )
 
 target_link_libraries(ncs_core

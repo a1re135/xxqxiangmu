@@ -75,12 +75,47 @@ int main(int argc, char *argv[])
 
     DatabaseManager databaseManager;
     if (!databaseManager.initialize()) {
+
+        QString message;
+
+        if (databaseManager.isCorrupted()) {
+
+            message =
+                QStringLiteral(
+                    "数据库文件已损坏，"
+                    "管理端无法安全启动。\n\n"
+                    "%1\n\n"
+                    "请恢复数据库备份，"
+                    "或删除损坏的数据库后重新启动程序。"
+                ).arg(
+                    databaseManager
+                        .lastErrorMessage()
+                );
+
+        } else {
+
+            message =
+                databaseManager
+                        .lastErrorMessage()
+                        .isEmpty()
+                    ? QStringLiteral(
+                          "数据库初始化失败。\n"
+                          "请检查数据库文件、"
+                          "目录权限或数据库配置。"
+                      )
+                    : databaseManager
+                          .lastErrorMessage();
+        }
+
+
         QMessageBox::critical(
             nullptr,
-            QStringLiteral("数据库错误"),
-            QStringLiteral(
-                "数据库初始化失败。\n"
-                "请检查数据库文件、目录权限或数据库配置。"));
+            databaseManager.isCorrupted()
+                ? QStringLiteral("数据库损坏")
+                : QStringLiteral("数据库错误"),
+            message
+        );
+
         return -1;
     }
 

@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
 #include "mainwindowhelpers.h"
+#include "network/chargercommandclient.h"
 
 #include <algorithm>
 #include <QDate>
@@ -55,173 +56,282 @@
 
 void MainWindow::restartSelectedCharger()
 {
-    const int id = selectedChargerId();
+    const int id =
+        selectedChargerId();
 
     if (id <= 0) {
+
         QMessageBox::information(
             this,
             QStringLiteral("远程重启"),
-            QStringLiteral("请先选择一个电桩。")
+            QStringLiteral(
+                "请先选择一个电桩。"
+            )
         );
+
         return;
     }
 
-    const int status = selectedChargerStatus();
+
+    const int status =
+        selectedChargerStatus();
+
 
     QString message;
+
     if (status == 1) {
-        message = QStringLiteral(
-            "该电桩正在充电，重启会中断用户充电。\n\n确定要继续吗？"
-        );
+
+        message =
+            QStringLiteral(
+                "该电桩正在充电，"
+                "重启会中断用户充电。\n\n"
+                "确定要继续吗？"
+            );
+
     } else {
-        message = QStringLiteral(
-            "确定要远程重启当前电桩吗？"
-        );
+
+        message =
+            QStringLiteral(
+                "确定要通过 Socket "
+                "向当前电桩发送远程重启指令吗？"
+            );
     }
 
+
+    // =========================================================
+    // Confirmation
+    // =========================================================
+
     QMessageBox confirmBox(this);
-    confirmBox.setIcon(QMessageBox::Warning);
-    confirmBox.setWindowTitle(QStringLiteral("确认远程重启"));
-    confirmBox.setText(message);
-    confirmBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-    confirmBox.setDefaultButton(QMessageBox::No);
 
-    confirmBox.setStyleSheet(R"(
+    confirmBox.setIcon(
+        QMessageBox::Warning
+    );
 
-        QMessageBox {
-            background-color: #08111F;
-        }
+    confirmBox.setWindowTitle(
+        QStringLiteral(
+            "确认远程重启"
+        )
+    );
 
-        QMessageBox QLabel {
-            color: #EAF3FF;
-            font-size: 13px;
-        }
+    confirmBox.setText(
+        message
+    );
 
-        QPushButton {
-            min-width: 90px;
-            min-height: 34px;
-            background-color: #10233B;
-            color: #DCEBFF;
-            border: 1px solid #315A82;
-            border-radius: 8px;
-            padding: 6px 12px;
-            font-weight: 600;
-        }
+    confirmBox.setStandardButtons(
+        QMessageBox::Yes
+        | QMessageBox::No
+    );
 
-        QPushButton:hover {
-            background-color: #173656;
-            border-color: #60A5FA;
-        }
+    confirmBox.setDefaultButton(
+        QMessageBox::No
+    );
 
-    )");
 
-    if (confirmBox.exec() != QMessageBox::Yes) {
+    confirmBox.setStyleSheet(
+        QStringLiteral(R"(
+
+            QMessageBox {
+                background-color:#08111F;
+            }
+
+            QMessageBox QLabel {
+                color:#EAF3FF;
+                font-size:13px;
+            }
+
+            QPushButton {
+                min-width:90px;
+                min-height:34px;
+
+                background-color:#10233B;
+                color:#DCEBFF;
+
+                border:1px solid #315A82;
+                border-radius:8px;
+
+                padding:6px 12px;
+
+                font-weight:600;
+            }
+
+            QPushButton:hover {
+                background-color:#173656;
+                border-color:#60A5FA;
+            }
+
+        )")
+    );
+
+
+    if (confirmBox.exec()
+        != QMessageBox::Yes) {
+
         return;
     }
 
-    QProgressDialog progressDialog(
-        QStringLiteral("正在向电桩发送重启指令..."),
-        QString(),
-        0,
-        100,
-        this
+
+    // =========================================================
+    // Progress dialog
+    // =========================================================
+
+    auto *progress =
+        new QProgressDialog(
+            QStringLiteral(
+                "正在通过 TCP Socket "
+                "向电桩发送重启指令..."
+            ),
+            QString(),
+            0,
+            100,
+            this
+        );
+
+
+    progress->setWindowTitle(
+        QStringLiteral(
+            "远程重启"
+        )
     );
 
-    progressDialog.setWindowTitle(
-        QStringLiteral("远程重启")
+    progress->setCancelButton(
+        nullptr
     );
 
-    progressDialog.setCancelButton(nullptr);
-
-    progressDialog.setWindowModality(
+    progress->setWindowModality(
         Qt::ApplicationModal
     );
 
-    progressDialog.setAutoClose(false);
-    progressDialog.setAutoReset(false);
+    progress->setAutoClose(
+        false
+    );
 
-    progressDialog.setMinimumDuration(0);
+    progress->setAutoReset(
+        false
+    );
 
-    progressDialog.setStyleSheet(QStringLiteral(R"(
+    progress->setMinimumDuration(
+        0
+    );
 
-        QProgressDialog {
-            background:#08111F;
-            color:#EAF3FF;
-        }
-
-        QLabel {
-            color:#EAF3FF;
-            font-size:13px;
-            font-weight:600;
-        }
-
-        QProgressBar {
-            background:#10233B;
-            color:#EAF3FF;
-
-            border:1px solid #315A82;
-            border-radius:7px;
-
-            text-align:center;
-            min-height:22px;
-        }
-
-        QProgressBar::chunk {
-            background:#10B981;
-            border-radius:6px;
-        }
-
-    )"));
-
-    progressDialog.setValue(0);
-    progressDialog.show();
-
-    auto *restartTimer =
-        new QTimer(this);
-
-    restartTimer->setInterval(100);
-
-    auto *elapsedMs =
-        new int(0);
-
-    connect(
-        restartTimer,
-        &QTimer::timeout,
-        this,
-        [this,
-         id,
-         restartTimer,
-         elapsedMs,
-         &progressDialog,
-         style = confirmBox.styleSheet()]()
-        {
-            *elapsedMs += 100;
-
-            const int progress =
-                qMin(
-                    100,
-                    (*elapsedMs * 100) / 2000
-                );
-
-            progressDialog.setValue(
-                progress
-            );
+    progress->setValue(
+        0
+    );
 
 
-            if (*elapsedMs < 2000) {
-                return;
+    progress->setStyleSheet(
+        QStringLiteral(R"(
+
+            QProgressDialog {
+                background:#08111F;
+                color:#EAF3FF;
             }
 
+            QLabel {
+                color:#EAF3FF;
+                font-size:13px;
+                font-weight:600;
+            }
 
-            restartTimer->stop();
+            QProgressBar {
+                background:#10233B;
+                color:#EAF3FF;
 
-            QString errorMessage;
+                border:1px solid #315A82;
+                border-radius:7px;
 
-            if (!m_chargerService.restartCharger(
-                    id,
-                    errorMessage)) {
+                text-align:center;
 
-                progressDialog.close();
+                min-height:22px;
+            }
+
+            QProgressBar::chunk {
+                background:#10B981;
+                border-radius:6px;
+            }
+
+        )")
+    );
+
+
+    progress->show();
+
+
+    // =========================================================
+    // Animate progress while waiting for Socket response
+    // =========================================================
+
+    auto *progressTimer =
+        new QTimer(progress);
+
+    progressTimer->setInterval(
+        100
+    );
+
+
+    connect(
+        progressTimer,
+        &QTimer::timeout,
+        progress,
+        [progress]()
+        {
+            const int current =
+                progress->value();
+
+            if (current < 95) {
+
+                progress->setValue(
+                    qMin(
+                        95,
+                        current + 5
+                    )
+                );
+            }
+        }
+    );
+
+
+    progressTimer->start();
+
+
+    // =========================================================
+    // Socket client
+    // =========================================================
+
+    auto *client =
+        new ChargerCommandClient(this);
+
+
+    connect(
+        client,
+        &ChargerCommandClient::restartFinished,
+        this,
+        [this,
+         client,
+         progress,
+         progressTimer,
+         id,
+         style = confirmBox.styleSheet()](
+            int,
+            bool success,
+            const QString &socketMessage)
+        {
+            progressTimer->stop();
+
+            progress->setValue(
+                100
+            );
+
+            progress->close();
+
+            progress->deleteLater();
+
+
+            // ==============================================
+            // Socket failed
+            // ==============================================
+
+            if (!success) {
 
                 QMessageBox errorBox(this);
 
@@ -236,7 +346,14 @@ void MainWindow::restartSelectedCharger()
                 );
 
                 errorBox.setText(
-                    errorMessage
+                    QStringLiteral(
+                        "%1\n\n"
+                        "请确认 charger_simulator "
+                        "正在运行，并监听 "
+                        "127.0.0.1:45454。"
+                    ).arg(
+                        socketMessage
+                    )
                 );
 
                 errorBox.setStandardButtons(
@@ -250,18 +367,71 @@ void MainWindow::restartSelectedCharger()
                 errorBox.exec();
 
 
-                restartTimer->deleteLater();
-                delete elapsedMs;
+                client->deleteLater();
 
                 return;
             }
 
 
-            progressDialog.setValue(100);
-            progressDialog.close();
+            // ==============================================
+            // Charger acknowledged command.
+            // Now update local database state.
+            // ==============================================
 
+            QString errorMessage;
+
+
+            if (!m_chargerService
+                     .restartCharger(
+                         id,
+                         errorMessage
+                     )) {
+
+                QMessageBox errorBox(this);
+
+                errorBox.setIcon(
+                    QMessageBox::Critical
+                );
+
+                errorBox.setWindowTitle(
+                    QStringLiteral(
+                        "状态更新失败"
+                    )
+                );
+
+                errorBox.setText(
+                    QStringLiteral(
+                        "电桩已经通过 Socket "
+                        "确认重启，"
+                        "但本地数据库状态更新失败。\n\n%1"
+                    ).arg(
+                        errorMessage
+                    )
+                );
+
+                errorBox.setStandardButtons(
+                    QMessageBox::Ok
+                );
+
+                errorBox.setStyleSheet(
+                    style
+                );
+
+                errorBox.exec();
+
+
+                client->deleteLater();
+
+                return;
+            }
+
+
+            // ==============================================
+            // Refresh UI
+            // ==============================================
 
             refreshChargerManagement();
+
             refreshChargerStatusOverview();
 
 
@@ -279,7 +449,11 @@ void MainWindow::restartSelectedCharger()
 
             okBox.setText(
                 QStringLiteral(
-                    "电桩已完成重启并恢复为空闲状态。"
+                    "TCP Socket 指令执行成功。\n\n"
+                    "电桩 %1 已完成重启，"
+                    "并恢复为空闲状态。"
+                ).arg(
+                    id
                 )
             );
 
@@ -294,37 +468,18 @@ void MainWindow::restartSelectedCharger()
             okBox.exec();
 
 
-            restartTimer->deleteLater();
-            delete elapsedMs;
+            client->deleteLater();
         }
     );
 
-    restartTimer->start();
 
-    progressDialog.exec();
+    // =========================================================
+    // Send command
+    // =========================================================
 
-    QString errorMessage;
-    if (!m_chargerService.restartCharger(id, errorMessage)) {
-        QMessageBox errorBox(this);
-        errorBox.setIcon(QMessageBox::Critical);
-        errorBox.setWindowTitle(QStringLiteral("远程重启失败"));
-        errorBox.setText(errorMessage);
-        errorBox.setStandardButtons(QMessageBox::Ok);
-        errorBox.setStyleSheet(confirmBox.styleSheet());
-        errorBox.exec();
-        return;
-    }
-
-    refreshChargerManagement();
-    refreshChargerStatusOverview();
-
-    QMessageBox okBox(this);
-    okBox.setIcon(QMessageBox::Information);
-    okBox.setWindowTitle(QStringLiteral("远程重启成功"));
-    okBox.setText(QStringLiteral("电桩已恢复为空闲状态。"));
-    okBox.setStandardButtons(QMessageBox::Ok);
-    okBox.setStyleSheet(confirmBox.styleSheet());
-    okBox.exec();
+    client->restartCharger(
+        id
+    );
 }
 
 void MainWindow::setSelectedChargerInUse()

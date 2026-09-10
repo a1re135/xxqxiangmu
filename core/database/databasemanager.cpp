@@ -65,8 +65,20 @@ bool DatabaseManager::openDatabase()
 
     if (!m_database.open()) {
 
-        qDebug() << "Failed to open database:"
-                 << m_database.lastError().text();
+        const QString error =
+            m_database.lastError().text();
+
+        qCritical()
+            << "Failed to open database:"
+            << error;
+
+        m_lastErrorMessage =
+            QStringLiteral(
+                "无法打开数据库。\n\n"
+                "请检查数据库文件是否存在，"
+                "以及当前用户是否有读写权限。\n\n"
+                "详细信息：%1"
+            ).arg(error);
 
         return false;
     }
@@ -74,11 +86,104 @@ bool DatabaseManager::openDatabase()
     qDebug() << "Database opened successfully:"
              << m_databasePath;
 
+    if (!checkDatabaseIntegrity()) {
+        return false;
+    }
+
     if (!configureDatabase()) {
         qDebug()
             << "Failed to configure database.";
         return false;
     }
+
+    return true;
+}
+
+bool DatabaseManager::checkDatabaseIntegrity()
+{
+    m_corrupted = false;
+
+    if (!m_database.isOpen()) {
+        m_lastErrorMessage =
+            QStringLiteral(
+                "数据库尚未打开。"
+            );
+
+        return false;
+    }
+
+    QSqlQuery query(m_database);
+
+    if (!query.exec(
+            QStringLiteral(
+                "PRAGMA quick_check;"
+            ))) {
+
+        const QString sqlError =
+            query.lastError().text();
+
+        qCritical()
+            << "Database integrity check failed:"
+            << sqlError;
+
+        m_corrupted = true;
+
+        m_lastErrorMessage =
+            QStringLiteral(
+                "数据库文件无法正常读取，"
+                "可能已经损坏。\n\n"
+                "SQLite 错误：%1"
+            ).arg(sqlError);
+
+        return false;
+    }
+
+
+    if (!query.next()) {
+
+        m_corrupted = true;
+
+        m_lastErrorMessage =
+            QStringLiteral(
+                "数据库完整性检查没有返回结果，"
+                "数据库文件可能已经损坏。"
+            );
+
+        qCritical()
+            << "Database integrity check returned no result.";
+
+        return false;
+    }
+
+
+    const QString result =
+        query.value(0)
+            .toString()
+            .trimmed();
+
+
+    if (result.compare(
+            QStringLiteral("ok"),
+            Qt::CaseInsensitive) != 0) {
+
+        m_corrupted = true;
+
+        m_lastErrorMessage =
+            QStringLiteral(
+                "检测到数据库文件损坏。\n\n"
+                "完整性检查结果：%1"
+            ).arg(result);
+
+        qCritical()
+            << "Database corruption detected:"
+            << result;
+
+        return false;
+    }
+
+
+    qInfo()
+        << "Database integrity check passed.";
 
     return true;
 }
@@ -910,9 +1015,22 @@ QSqlDatabase DatabaseManager::connection() const
     return m_database;
 }
 
+QString DatabaseManager::lastErrorMessage() const
+{
+    return m_lastErrorMessage;
+}
+
+bool DatabaseManager::isCorrupted() const
+{
+    return m_corrupted;
+}
+
 bool DatabaseManager::initialize()
 {
     Q_INIT_RESOURCE(database_resources);
+
+        m_lastErrorMessage.clear();
+        m_corrupted = false;
 
     if (!openDatabase()) {
         return false;
