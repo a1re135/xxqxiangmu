@@ -1410,14 +1410,15 @@ void MainWindow::refreshPredictionPage()
     if (summary.peakTime.isValid()) {
 
         m_predictionPeakLabel->setText(
-            QStringLiteral("%1 · %2 kWh")
+            QStringLiteral(
+                "%1 · %2 kWh"
+            )
                 .arg(
-                    summary.peakTime
-                            .toString(
-                            QStringLiteral(
-                                "MM-dd HH:mm"
-                            )
+                    summary.peakTime.toString(
+                        QStringLiteral(
+                            "MM-dd HH:mm"
                         )
+                    )
                 )
                 .arg(
                     summary.peakLoad,
@@ -1427,10 +1428,30 @@ void MainWindow::refreshPredictionPage()
                 )
         );
 
+        m_predictionPeakLabel->setStyleSheet(
+            QStringLiteral(
+                "QLabel {"
+                "color:#F87171;"
+                "font-size:25px;"
+                "font-weight:900;"
+                "}"
+            )
+        );
+
     } else {
 
         m_predictionPeakLabel->setText(
             QStringLiteral("--")
+        );
+
+        m_predictionPeakLabel->setStyleSheet(
+            QStringLiteral(
+                "QLabel {"
+                "color:#F5F7FA;"
+                "font-size:25px;"
+                "font-weight:900;"
+                "}"
+            )
         );
     }
 
@@ -1518,24 +1539,52 @@ void MainWindow::refreshPredictionPage()
             addItem(
                 3,
                 point.isPeak
-                    ? QStringLiteral("高峰")
+                    ? QStringLiteral("高峰预警")
                     : QStringLiteral("正常")
             );
-
 
         peakItem->setForeground(
             QBrush(
                 QColor(
                     point.isPeak
-                        ? QStringLiteral(
-                            "#F6A648"
-                          )
-                        : QStringLiteral(
-                            "#10B981"
-                          )
+                        ? QStringLiteral("#F87171")
+                        : QStringLiteral("#34D399")
                 )
             )
         );
+
+
+        // ==========================================
+        // Highlight entire peak row
+        // ==========================================
+
+        if (point.isPeak) {
+
+            for (int column = 0;
+                 column < m_predictionTable->columnCount();
+                 ++column) {
+
+                QTableWidgetItem *item =
+                    m_predictionTable->item(
+                        row,
+                        column
+                    );
+
+                if (!item) {
+                    continue;
+                }
+
+                item->setBackground(
+                    QBrush(
+                        QColor(
+                            QStringLiteral(
+                                "#2D1D27"
+                            )
+                        )
+                    )
+                );
+            }
+        }
     }
 }
 
@@ -1586,7 +1635,9 @@ void MainWindow::runPrediction()
     const QString scriptPath =
         QDir(projectRoot)
             .filePath(
-                QStringLiteral("ml/predict.py")
+                QStringLiteral(
+                    "ml/main.py"
+                )
             );
 
 
@@ -1650,7 +1701,7 @@ void MainWindow::runPrediction()
 
     m_runPredictionButton
         ->setText(
-            QStringLiteral("正在运行预测...")
+            QStringLiteral("正在重新训练并预测...")
         );
 
 
@@ -1667,8 +1718,11 @@ void MainWindow::runPrediction()
 
     arguments
         << scriptPath
+        << QStringLiteral("refresh")
         << QStringLiteral("--station")
-        << QString::number(stationId)
+        << QString::number(
+               stationId
+           )
         << QStringLiteral("--horizon")
         << QString::number(
                m_predictionHours
@@ -1707,17 +1761,14 @@ void MainWindow::runPrediction()
                 );
 
 
-            if (exitStatus
-                    != QProcess::NormalExit
+            if (exitStatus != QProcess::NormalExit
                 || exitCode != 0) {
 
                 QMessageBox::warning(
                     this,
+                    QStringLiteral("预测失败"),
                     QStringLiteral(
-                        "预测失败"
-                    ),
-                    QStringLiteral(
-                        "Python 预测任务执行失败。\n\n%1"
+                        "重新训练或预测失败。\n\n%1"
                     ).arg(
                         errorOutput.isEmpty()
                             ? output
@@ -1725,11 +1776,8 @@ void MainWindow::runPrediction()
                     )
                 );
 
-                m_predictionProcess
-                    ->deleteLater();
-
-                m_predictionProcess =
-                    nullptr;
+                m_predictionProcess->deleteLater();
+                m_predictionProcess = nullptr;
 
                 return;
             }
@@ -1744,7 +1792,8 @@ void MainWindow::runPrediction()
                 this,
                 QStringLiteral("预测完成"),
                 QStringLiteral(
-                    "已完成未来 %1 小时预测。"
+                    "模型已重新训练，"
+                    "并完成未来 %1 小时预测。"
                 ).arg(
                     m_predictionHours
                 )

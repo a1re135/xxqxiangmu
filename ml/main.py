@@ -98,6 +98,73 @@ def command_predict(args) -> None:
         prediction_args,
     )
 
+def command_refresh(args) -> None:
+    """
+    Rebuild the dataset, retrain the model,
+    then generate a fresh prediction.
+    """
+
+    print()
+    print("=" * 70)
+    print("STEP 1/3 - Preparing training data")
+    print("=" * 70)
+
+    prepare_args = []
+
+    if args.db:
+        prepare_args.extend([
+            "--db",
+            args.db,
+        ])
+
+    run_script(
+        "prepare_data.py",
+        prepare_args,
+    )
+
+
+    print()
+    print("=" * 70)
+    print("STEP 2/3 - Training RandomForest model")
+    print("=" * 70)
+
+    run_script(
+        "train_model.py"
+    )
+
+
+    print()
+    print("=" * 70)
+    print("STEP 3/3 - Generating prediction")
+    print("=" * 70)
+
+    prediction_args = [
+        "--horizon",
+        str(args.horizon),
+    ]
+
+    if args.station is not None:
+        prediction_args.extend([
+            "--station",
+            str(args.station),
+        ])
+
+    if args.db:
+        prediction_args.extend([
+            "--db",
+            args.db,
+        ])
+
+    run_script(
+        "predict.py",
+        prediction_args,
+    )
+
+
+    print()
+    print("=" * 70)
+    print("ML refresh completed successfully.")
+    print("=" * 70)
 
 def command_evaluate(args) -> None:
     evaluation_args = [
@@ -212,7 +279,48 @@ def build_parser() -> argparse.ArgumentParser:
         function=command_predict
     )
 
+    # ============================================================
+    # refresh
+    #
+    # prepare data -> train -> predict
+    # ============================================================
 
+    refresh_parser = subparsers.add_parser(
+        "refresh",
+        help=(
+            "Prepare data, retrain the model, "
+            "and generate fresh predictions."
+        ),
+    )
+
+    refresh_parser.add_argument(
+        "--station",
+        type=int,
+        default=None,
+        help=(
+            "Station ID. "
+            "If omitted, predict all stations."
+        ),
+    )
+
+    refresh_parser.add_argument(
+        "--horizon",
+        type=int,
+        choices=[1, 6, 24],
+        default=6,
+        help="Prediction horizon in hours.",
+    )
+
+    refresh_parser.add_argument(
+        "--db",
+        default=None,
+        help="Optional SQLite database path.",
+    )
+
+    refresh_parser.set_defaults(
+        function=command_refresh
+    )
+    
     # ============================================================
     # evaluate
     # ============================================================
