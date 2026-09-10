@@ -35,6 +35,7 @@ set(PROJECT_SOURCES
     stationmanagepage.cpp
     usermanagepage.cpp
     userorders.cpp
+    predictionpage.cpp
 
     adminloginwindow.cpp
     adminloginwindow.h
@@ -51,6 +52,11 @@ target_link_libraries(client_admin
         Qt6::Widgets
         Qt6::Charts
         ncs_core
+)
+
+target_compile_definitions(client_admin
+    PRIVATE
+        NCS_PROJECT_ROOT="${CMAKE_SOURCE_DIR}"
 )
 
 set_target_properties(client_admin PROPERTIES

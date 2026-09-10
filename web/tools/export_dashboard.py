@@ -146,6 +146,59 @@ def build_dashboard(db_path: Path) -> dict:
             "WHERE status=2 AND substr(start_time,1,7)=?",
             (month,), 0
         ))
+        
+                # ==========================================
+        # Latest 24-hour ML forecast
+        # ==========================================
+
+        latest_prediction_time = scalar(
+            cur,
+            """
+            SELECT MAX(generated_time)
+            FROM load_prediction
+            """,
+            default=None,
+        )
+
+        forecast24h = []
+
+        if latest_prediction_time:
+            prediction_rows = cur.execute(
+                """
+                SELECT
+                    target_time,
+                    SUM(predicted_load) AS total_load
+                FROM load_prediction
+                WHERE generated_time = ?
+                GROUP BY target_time
+                ORDER BY target_time
+                LIMIT 24
+                """,
+                (latest_prediction_time,),
+            ).fetchall()
+
+            for target_time, total_load in prediction_rows:
+                try:
+                    dt = datetime.fromisoformat(
+                        str(target_time)
+                    )
+
+                    display_time = dt.strftime(
+                        "%m-%d %H:%M"
+                    )
+
+                except ValueError:
+                    display_time = str(
+                        target_time
+                    )
+
+                forecast24h.append({
+                    "time": display_time,
+                    "value": round(
+                        float(total_load or 0.0),
+                        2,
+                    ),
+                })
 
         return {
             "updatedAt": now.strftime("%Y-%m-%d %H:%M:%S"),
@@ -171,7 +224,7 @@ def build_dashboard(db_path: Path) -> dict:
             "revenue30d": revenue30,
             "hourlyUsage": hourly_usage,
             "chargeType": charge_type,
-            "forecast24h": [],
+            "forecast24h": forecast24h,
         }
     finally:
         con.close()

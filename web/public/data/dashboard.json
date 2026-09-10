@@ -1,17 +1,17 @@
 {
-  "updatedAt": "2026-09-06 13:49:39",
+  "updatedAt": "2026-09-10 02:03:12",
   "source": {
     "type": "sqlite",
     "database": "/home/bit/.local/share/NCS_Charging_Platform/charge_platform.db",
     "generatedBy": "tools/export_dashboard.py"
   },
   "kpis": {
-    "totalOrders": 90,
-    "totalRevenue": 4634.21,
+    "totalOrders": 97,
+    "totalRevenue": 5306.71,
     "onlineChargers": 35,
-    "registeredUsers": 10,
+    "registeredUsers": 11,
     "todayRevenue": 0.0,
-    "monthRevenue": 655.03
+    "monthRevenue": 1205.76
   },
   "chargerStatus": [
     {
@@ -29,138 +29,122 @@
   ],
   "stationRanking": [
     {
-      "name": "Central Charging Station",
-      "value": 1273.6
-    },
-    {
       "name": "Haidian Charging Station",
-      "value": 1180.2
-    },
-    {
-      "name": "Chaoyang Charging Station",
-      "value": 1159.6
+      "value": 837.16
     },
     {
       "name": "Shijingshan Charging Station",
-      "value": 1108.5
+      "value": 741.81
+    },
+    {
+      "name": "Central Charging Station",
+      "value": 660.91
     },
     {
       "name": "Fengtai Charging Station",
-      "value": 987.3
+      "value": 649.06
+    },
+    {
+      "name": "Chaoyang Charging Station",
+      "value": 594.78
     }
   ],
   "revenue30d": [
     {
-      "date": "08-08",
-      "value": 173.68
-    },
-    {
-      "date": "08-09",
-      "value": 197.95
-    },
-    {
-      "date": "08-10",
-      "value": 131.0
-    },
-    {
-      "date": "08-11",
-      "value": 209.4
-    },
-    {
       "date": "08-12",
-      "value": 158.65
+      "value": 158.09
     },
     {
       "date": "08-13",
-      "value": 155.33
+      "value": 201.99
     },
     {
       "date": "08-14",
-      "value": 95.8
+      "value": 69.03
     },
     {
       "date": "08-15",
-      "value": 161.37
+      "value": 152.61
     },
     {
       "date": "08-16",
-      "value": 221.85
+      "value": 188.17
     },
     {
       "date": "08-17",
-      "value": 135.92
+      "value": 166.5
     },
     {
       "date": "08-18",
-      "value": 164.61
+      "value": 146.44
     },
     {
       "date": "08-19",
-      "value": 150.12
+      "value": 125.32
     },
     {
       "date": "08-20",
-      "value": 157.98
+      "value": 150.69
     },
     {
       "date": "08-21",
-      "value": 197.08
+      "value": 148.9
     },
     {
       "date": "08-22",
-      "value": 113.94
+      "value": 98.78
     },
     {
       "date": "08-23",
-      "value": 213.32
+      "value": 167.45
     },
     {
       "date": "08-24",
-      "value": 126.85
+      "value": 230.73
     },
     {
       "date": "08-25",
-      "value": 141.11
+      "value": 188.09
     },
     {
       "date": "08-26",
-      "value": 101.97
+      "value": 124.98
     },
     {
       "date": "08-27",
-      "value": 128.94
+      "value": 162.83
     },
     {
       "date": "08-28",
-      "value": 115.24
+      "value": 164.35
     },
     {
       "date": "08-29",
-      "value": 106.31
+      "value": 96.42
     },
     {
       "date": "08-30",
-      "value": 146.5
+      "value": 158.06
     },
     {
       "date": "08-31",
-      "value": 122.26
+      "value": 131.66
     },
     {
       "date": "09-01",
-      "value": 81.79
+      "value": 133.05
     },
     {
       "date": "09-02",
-      "value": 189.31
+      "value": 145.19
     },
     {
       "date": "09-03",
-      "value": 181.87
+      "value": 160.08
     },
     {
       "date": "09-04",
-      "value": 202.06
+      "value": 122.32
     },
     {
       "date": "09-05",
@@ -169,33 +153,49 @@
     {
       "date": "09-06",
       "value": 0.0
+    },
+    {
+      "date": "09-07",
+      "value": 0.0
+    },
+    {
+      "date": "09-08",
+      "value": 0.0
+    },
+    {
+      "date": "09-09",
+      "value": 645.12
+    },
+    {
+      "date": "09-10",
+      "value": 0.0
     }
   ],
   "hourlyUsage": [
     0,
     0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    5,
-    10,
-    11,
-    7,
-    5,
-    8,
-    11,
-    4,
-    4,
-    3,
-    4,
     2,
-    7,
+    0,
+    0,
+    0,
+    0,
+    11,
+    5,
+    3,
     6,
     3,
+    7,
+    8,
+    6,
+    7,
+    8,
+    3,
+    7,
+    6,
+    6,
+    8,
     0,
-    0
+    1
   ],
   "chargeType": [
     {
@@ -207,6 +207,102 @@
       "value": 20
     }
   ],
-  "forecast24h": [],
-  "stationRankingUnit": "kWh"
+  "forecast24h": [
+    {
+      "time": "09-10 03:00",
+      "value": 0.0
+    },
+    {
+      "time": "09-10 04:00",
+      "value": 0.16
+    },
+    {
+      "time": "09-10 05:00",
+      "value": 0.25
+    },
+    {
+      "time": "09-10 06:00",
+      "value": 0.25
+    },
+    {
+      "time": "09-10 07:00",
+      "value": 32.22
+    },
+    {
+      "time": "09-10 08:00",
+      "value": 33.75
+    },
+    {
+      "time": "09-10 09:00",
+      "value": 9.32
+    },
+    {
+      "time": "09-10 10:00",
+      "value": 5.15
+    },
+    {
+      "time": "09-10 11:00",
+      "value": 3.26
+    },
+    {
+      "time": "09-10 12:00",
+      "value": 3.44
+    },
+    {
+      "time": "09-10 13:00",
+      "value": 7.12
+    },
+    {
+      "time": "09-10 14:00",
+      "value": 3.88
+    },
+    {
+      "time": "09-10 15:00",
+      "value": 5.08
+    },
+    {
+      "time": "09-10 16:00",
+      "value": 5.57
+    },
+    {
+      "time": "09-10 17:00",
+      "value": 6.06
+    },
+    {
+      "time": "09-10 18:00",
+      "value": 27.13
+    },
+    {
+      "time": "09-10 19:00",
+      "value": 5.82
+    },
+    {
+      "time": "09-10 20:00",
+      "value": 4.88
+    },
+    {
+      "time": "09-10 21:00",
+      "value": 9.84
+    },
+    {
+      "time": "09-10 22:00",
+      "value": 0.0
+    },
+    {
+      "time": "09-10 23:00",
+      "value": 0.32
+    },
+    {
+      "time": "09-11 00:00",
+      "value": 0.0
+    },
+    {
+      "time": "09-11 01:00",
+      "value": 0.0
+    },
+    {
+      "time": "09-11 02:00",
+      "value": 0.0
+    }
+  ]
 }

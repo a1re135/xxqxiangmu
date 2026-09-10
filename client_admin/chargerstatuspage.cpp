@@ -94,28 +94,6 @@ void MainWindow::setupChargerStatusOverview()
     auto *introLayout = new QHBoxLayout();
     introLayout->setSpacing(14);
 
-    auto *icon = new QLabel(page);
-    icon->setFixedSize(46, 46);
-    icon->setAlignment(Qt::AlignCenter);
-    icon->setText(QStringLiteral("◉"));
-    icon->setStyleSheet(QStringLiteral(
-        "QLabel { color:#10B981; background:#102D2B; border:1px solid #1B5148; "
-        "border-radius:14px; font-size:23px; font-weight:900; }"));
-
-    auto *titleLayout = new QVBoxLayout();
-    titleLayout->setSpacing(3);
-    auto *title = new QLabel(QStringLiteral("电桩状态总览"), page);
-    title->setStyleSheet(QStringLiteral(
-        "QLabel { color:#F5F7FA; font-size:24px; font-weight:900; }"));
-    auto *subtitle = new QLabel(QStringLiteral("实时统计在用、闲置与故障设备，并计算整体设备健康度"), page);
-    subtitle->setStyleSheet(QStringLiteral(
-        "QLabel { color:#8FA1AC; font-size:14px; font-weight:600; }"));
-    titleLayout->addWidget(title);
-    titleLayout->addWidget(subtitle);
-    introLayout->addWidget(icon);
-    introLayout->addLayout(titleLayout);
-    introLayout->addStretch();
-
     m_statusQueryPerformanceLabel = new QLabel(QStringLiteral("统计耗时 -- ms"), page);
     m_statusQueryPerformanceLabel->setAlignment(Qt::AlignCenter);
     m_statusQueryPerformanceLabel->setMinimumWidth(150);

@@ -13,6 +13,7 @@
 #include <QTableView>
 #include <QTableWidget>
 #include <QVector>
+#include <QTimer>
 
 #include <QtCharts/QChartView>
 #include <QList>
@@ -23,6 +24,7 @@
 #include "service/statsservice.h"
 #include "service/adminstationservice.h"
 #include "service/adminuserservice.h"
+#include "service/predictionservice.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -41,6 +43,7 @@ class QPushButton;
 class QProgressDialog;
 class QSortFilterProxyModel;
 class QSpinBox;
+class QProcess;
 
 class MainWindow : public QMainWindow
 {
@@ -94,6 +97,11 @@ private:
     void userSelectionChanged(const QModelIndex &current, const QModelIndex &previous);
     void toggleSelectedUserStatus();
     void showSelectedUserOrders();
+    void setupPredictionPage();
+    void refreshPredictionPage();
+    void runPrediction();
+    void runPredictionEvaluation();
+    void loadEvaluationResults();
 
     Ui::MainWindow *ui;
     AdminAuthService::AdminInfo m_currentAdmin;
@@ -145,6 +153,35 @@ private:
     QPushButton *m_userStatusButton = nullptr;
     QLabel *m_userSummaryLabel = nullptr;
     int m_selectedUserId = 0;
+
+    PredictionService m_predictionService;
+
+    QComboBox *m_predictionStationCombo = nullptr;
+
+    QPushButton *m_prediction1Button = nullptr;
+    QPushButton *m_prediction6Button = nullptr;
+    QPushButton *m_prediction24Button = nullptr;
+    QPushButton *m_runPredictionButton = nullptr;
+
+    QLabel *m_predictionTotalLabel = nullptr;
+    QLabel *m_predictionAverageLabel = nullptr;
+    QLabel *m_predictionPeakLabel = nullptr;
+
+    QChartView *m_predictionChartView = nullptr;
+    QTableWidget *m_predictionTable = nullptr;
+
+    QChartView *m_evaluationChartView = nullptr;
+    QTableWidget *m_evaluationTable = nullptr;
+
+    QPushButton *m_runEvaluationButton = nullptr;
+
+    QProcess *m_evaluationProcess = nullptr;
+
+    int m_predictionHours = 6;
+
+    QProcess *m_predictionProcess = nullptr;
+
+    QTimer *m_autoRefreshTimer = nullptr;
 };
 
 #endif // MAINWINDOW_H

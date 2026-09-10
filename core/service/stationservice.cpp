@@ -5,6 +5,9 @@
 #include <QFile>
 #include <QSettings>
 #include <algorithm>
+#include <QDateTime>
+#include <QSqlError>
+#include <QSqlQuery>
 
 #include "../util/app_paths.h"
 #include "../util/geo_util.h"
@@ -84,6 +87,176 @@ void StationService::locate(const QString &regionName, const QString &address)
     m_geocoder.geocode(addr, key);
 }
 
+bool StationService::loadNextPrediction(
+    int stationId,
+    const QString &generatedTime,
+    double &predictedLoad,
+    int &predictedFreeChargers,
+    bool &isPeak
+) const
+{
+    predictedLoad = 0.0;
+    predictedFreeChargers = -1;
+    isPeak = false;
+
+    if (!m_db
+        || generatedTime.isEmpty()) {
+        return false;
+    }
+
+    const QSqlDatabase db =
+        m_db->connection();
+
+    if (!db.isOpen()) {
+        return false;
+    }
+
+    QSqlQuery query(db);
+
+    query.prepare(
+        "SELECT "
+        "predicted_load, "
+        "predicted_free_chargers, "
+        "is_peak "
+        "FROM load_prediction "
+        "WHERE station_id = :station_id "
+        "AND generated_time = :generated_time "
+        "AND target_time >= :now "
+        "ORDER BY target_time ASC "
+        "LIMIT 1"
+    );
+
+    query.bindValue(
+        ":station_id",
+        stationId
+    );
+
+    query.bindValue(
+        ":generated_time",
+        generatedTime
+    );
+
+    query.bindValue(
+        ":now",
+        QDateTime::currentDateTime()
+            .toString(
+                QStringLiteral(
+                    "yyyy-MM-dd HH:mm:ss"
+                )
+            )
+    );
+
+    if (!query.exec()) {
+        LOG_WARN(
+            kModule,
+            QStringLiteral(
+                "读取电站 %1 预测失败：%2"
+            )
+                .arg(stationId)
+                .arg(
+                    query.lastError().text()
+                )
+        );
+
+        return false;
+    }
+
+    if (!query.next()) {
+        return false;
+    }
+
+    predictedLoad =
+        qMax(
+            0.0,
+            query.value(0).toDouble()
+        );
+
+    predictedFreeChargers =
+        query.value(1).toInt();
+
+    isPeak =
+        query.value(2).toInt() != 0;
+
+    return true;
+}
+{
+    predictedLoad = 0.0;
+    predictedFreeChargers = -1;
+    isPeak = false;
+
+    if (!m_db) {
+        return false;
+    }
+
+    const QSqlDatabase db =
+        m_db->connection();
+
+    if (!db.isOpen()) {
+        return false;
+    }
+
+    QSqlQuery query(db);
+
+    query.prepare(
+        "SELECT "
+        "predicted_load, "
+        "predicted_free_chargers, "
+        "is_peak "
+        "FROM load_prediction "
+        "WHERE station_id = :station_id "
+        "AND target_time >= :now "
+        "ORDER BY "
+        "generated_time DESC, "
+        "target_time ASC "
+        "LIMIT 1"
+    );
+
+    query.bindValue(
+        ":station_id",
+        stationId
+    );
+
+    query.bindValue(
+        ":now",
+        QDateTime::currentDateTime()
+            .toString(
+                QStringLiteral(
+                    "yyyy-MM-dd HH:mm:ss"
+                )
+            )
+    );
+
+    if (!query.exec()) {
+        LOG_WARN(
+            kModule,
+            QStringLiteral(
+                "读取电站 %1 预测数据失败：%2"
+            )
+                .arg(stationId)
+                .arg(
+                    query.lastError().text()
+                )
+        );
+
+        return false;
+    }
+
+    if (!query.next()) {
+        return false;
+    }
+
+    predictedLoad =
+        query.value(0).toDouble();
+
+    predictedFreeChargers =
+        query.value(1).toInt();
+
+    isPeak =
+        query.value(2).toInt() != 0;
+
+    return true;
+}
+
 QVector<StationListItem>
 StationService::listStationsByDistance(double latitude, double longitude) const
 {
@@ -110,6 +283,163 @@ StationService::listStationsByDistance(double latitude, double longitude) const
               [](const StationListItem &a, const StationListItem &b) {
                   return a.distanceKm < b.distanceKm;
               });
+    return items;
+}
+
+QVector<StationListItem>
+StationService::listStationsSmartRecommended(
+    double latitude,
+    double longitude
+) const
+{
+    QVector<StationListItem> items =
+        listStationsByDistance(
+            latitude,
+            longitude
+        );
+
+
+    if (items.isEmpty()) {
+        return items;
+    }
+
+
+    bool anyPrediction = false;
+
+    const QString predictionBatch =
+        latestPredictionBatch();
+
+    for (StationListItem &item : items) {
+
+        double predictedLoad = 0.0;
+        int predictedFree = -1;
+        bool predictedPeak = false;
+
+
+        const bool hasPrediction =
+            loadNextPrediction(
+                item.id,
+                predictionBatch,
+                predictedLoad,
+                predictedFree,
+                predictedPeak
+            );
+
+
+        item.hasPrediction =
+            hasPrediction;
+
+
+        if (hasPrediction) {
+
+            anyPrediction = true;
+
+            item.predictedLoad =
+                qMax(
+                    0.0,
+                    predictedLoad
+                );
+
+
+            item.predictedFreeChargers =
+                qBound(
+                    0,
+                    predictedFree,
+                    item.totalChargers
+                );
+
+
+            item.predictedPeak =
+                predictedPeak;
+        }
+
+
+        // If ML data is unavailable for this station,
+        // use current availability as fallback.
+        const int availableChargers =
+            hasPrediction
+                ? item.predictedFreeChargers
+                : item.freeChargers;
+
+
+        const double availabilityScore =
+            item.totalChargers > 0
+                ? static_cast<double>(
+                      availableChargers
+                  )
+                    / item.totalChargers
+                : 0.0;
+
+
+        // Nearer station = larger score.
+        const double distanceScore =
+            1.0
+            / (
+                1.0
+                + qMax(
+                    0.0,
+                    item.distanceKm
+                )
+            );
+
+
+        // Prediction availability matters more
+        // than distance.
+        item.recommendationScore =
+            0.75 * availabilityScore
+            + 0.25 * distanceScore;
+
+
+        // Penalize predicted peak periods.
+        if (hasPrediction
+            && predictedPeak) {
+
+            item.recommendationScore *=
+                0.85;
+        }
+    }
+
+
+    // If there is no ML data at all,
+    // preserve the normal distance order.
+    if (!anyPrediction) {
+        return items;
+    }
+
+
+    std::sort(
+        items.begin(),
+        items.end(),
+        [](
+            const StationListItem &a,
+            const StationListItem &b)
+        {
+            const double difference =
+                a.recommendationScore
+                - b.recommendationScore;
+
+
+            if (qAbs(difference)
+                > 0.000001) {
+
+                return
+                    a.recommendationScore
+                    > b.recommendationScore;
+            }
+
+
+            return
+                a.distanceKm
+                < b.distanceKm;
+        }
+    );
+
+
+    if (!items.isEmpty()) {
+        items[0].recommended = true;
+    }
+
+
     return items;
 }
 
@@ -208,6 +538,60 @@ bool StationService::getChargersByStationId(
         chargers,
         errorMessage
     );
+}
+
+QString StationService::latestPredictionBatch() const
+{
+    if (!m_db) {
+        return {};
+    }
+
+    const QSqlDatabase db =
+        m_db->connection();
+
+    if (!db.isOpen()) {
+        return {};
+    }
+
+    QSqlQuery query(db);
+
+    query.prepare(
+        "SELECT generated_time "
+        "FROM load_prediction "
+        "WHERE target_time >= :now "
+        "GROUP BY generated_time "
+        "ORDER BY generated_time DESC "
+        "LIMIT 1"
+    );
+
+    query.bindValue(
+        ":now",
+        QDateTime::currentDateTime()
+            .toString(
+                QStringLiteral(
+                    "yyyy-MM-dd HH:mm:ss"
+                )
+            )
+    );
+
+    if (!query.exec()) {
+        LOG_WARN(
+            kModule,
+            QStringLiteral(
+                "读取最新预测批次失败：%1"
+            ).arg(
+                query.lastError().text()
+            )
+        );
+
+        return {};
+    }
+
+    if (!query.next()) {
+        return {};
+    }
+
+    return query.value(0).toString();
 }
 
 } // namespace core

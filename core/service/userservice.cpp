@@ -5,6 +5,11 @@
 #include <QSqlQuery>
 #include <QDateTime>
 
+#include <QDir>
+#include <QFile>
+#include <QFileInfo>
+#include <QStandardPaths>
+
 namespace {
 bool getOpenDb(QSqlDatabase &db, QString &errorMessage)
 {
@@ -146,25 +151,254 @@ bool UserService::getUserById(int id, UserInfo &userInfo, QString &errorMessage)
     return true;
 }
 
-bool UserService::updateAvatar(int id, const QString &avatarPath, QString &errorMessage)
+bool UserService::updateAvatar(
+    int id,
+    const QString &avatarPath,
+    QString &errorMessage)
 {
     errorMessage.clear();
+
+
+    // ==========================================
+    // Validate source file
+    // ==========================================
+
+    QFileInfo sourceInfo(
+        avatarPath
+    );
+
+    if (!sourceInfo.exists()
+        || !sourceInfo.isFile()) {
+
+        errorMessage =
+            QStringLiteral(
+                "选择的头像文件不存在"
+            );
+
+        return false;
+    }
+
+
+    const QString extension =
+        sourceInfo
+            .suffix()
+            .toLower();
+
+
+    const QStringList allowedExtensions = {
+        QStringLiteral("png"),
+        QStringLiteral("jpg"),
+        QStringLiteral("jpeg"),
+        QStringLiteral("bmp")
+    };
+
+
+    if (!allowedExtensions.contains(
+            extension)) {
+
+        errorMessage =
+            QStringLiteral(
+                "头像仅支持 PNG、JPG、"
+                "JPEG、BMP 格式"
+            );
+
+        return false;
+    }
+
+
+    constexpr qint64 maxAvatarSize =
+        5LL * 1024LL * 1024LL;
+
+
+    if (sourceInfo.size()
+        > maxAvatarSize) {
+
+        errorMessage =
+            QStringLiteral(
+                "图片过大，请选择 "
+                "5MB 以内的图片"
+            );
+
+        return false;
+    }
+
+
+    // ==========================================
+    // Application data directory
+    // ==========================================
+
+    const QString genericDataPath =
+        QStandardPaths::writableLocation(
+            QStandardPaths::
+                GenericDataLocation
+        );
+
+
+    if (genericDataPath.isEmpty()) {
+        errorMessage =
+            QStringLiteral(
+                "无法获取应用数据目录"
+            );
+
+        return false;
+    }
+
+
+    QDir genericDataDir(
+        genericDataPath
+    );
+
+
+    const QString applicationDir =
+        genericDataDir.filePath(
+            QStringLiteral(
+                "NCS_Charging_Platform"
+            )
+        );
+
+
+    QDir appDir(
+        applicationDir
+    );
+
+
+    if (!appDir.mkpath(
+            QStringLiteral(
+                "avatars"
+            ))) {
+
+        errorMessage =
+            QStringLiteral(
+                "无法创建头像目录"
+            );
+
+        return false;
+    }
+
+
+    // Save a RELATIVE path in SQLite.
+    const QString relativePath =
+        QStringLiteral(
+            "avatars/user_%1.%2"
+        )
+            .arg(id)
+            .arg(extension);
+
+
+    const QString destinationPath =
+        appDir.filePath(
+            relativePath
+        );
+
+
+    // ==========================================
+    // Copy avatar
+    // ==========================================
+
+    const QString sourceAbsolute =
+        QDir::cleanPath(
+            sourceInfo
+                .absoluteFilePath()
+        );
+
+    const QString destinationAbsolute =
+        QDir::cleanPath(
+            QFileInfo(
+                destinationPath
+            ).absoluteFilePath()
+        );
+
+
+    if (sourceAbsolute
+        != destinationAbsolute) {
+
+        // Replace an existing avatar
+        // with the same filename.
+        if (QFile::exists(
+                destinationPath)) {
+
+            if (!QFile::remove(
+                    destinationPath)) {
+
+                errorMessage =
+                    QStringLiteral(
+                        "无法替换旧头像"
+                    );
+
+                return false;
+            }
+        }
+
+
+        if (!QFile::copy(
+                avatarPath,
+                destinationPath)) {
+
+            errorMessage =
+                QStringLiteral(
+                    "复制头像文件失败"
+                );
+
+            return false;
+        }
+    }
+
+
+    // ==========================================
+    // Save relative path to SQLite
+    // ==========================================
+
     QSqlDatabase db;
-    if (!getOpenDb(db, errorMessage)) return false;
+
+    if (!getOpenDb(
+            db,
+            errorMessage)) {
+
+        return false;
+    }
+
 
     QSqlQuery query(db);
-    query.prepare("UPDATE user SET avatar_path=:avatar WHERE id=:id");
-    query.bindValue(":avatar", avatarPath);
-    query.bindValue(":id", id);
+
+    query.prepare(
+        "UPDATE user "
+        "SET avatar_path = :avatar "
+        "WHERE id = :id"
+    );
+
+    query.bindValue(
+        ":avatar",
+        relativePath
+    );
+
+    query.bindValue(
+        ":id",
+        id
+    );
+
 
     if (!query.exec()) {
-        errorMessage = QStringLiteral("修改头像失败：") + query.lastError().text();
+        errorMessage =
+            QStringLiteral(
+                "修改头像失败："
+            )
+            + query.lastError().text();
+
         return false;
     }
+
+
     if (query.numRowsAffected() != 1) {
-        errorMessage = QStringLiteral("修改头像失败：未找到对应用户");
+        errorMessage =
+            QStringLiteral(
+                "修改头像失败："
+                "未找到对应用户"
+            );
+
         return false;
     }
+
+
     return true;
 }
 
@@ -174,6 +408,14 @@ bool UserService::updateNickname(int id, const QString &nickname, QString &error
     const QString cleanNickname = nickname.trimmed();
     if (cleanNickname.isEmpty()) {
         errorMessage = QStringLiteral("昵称不能为空");
+        return false;
+    }
+    if (cleanNickname.size() > 20) {
+        errorMessage =
+            QStringLiteral(
+                "昵称长度不能超过20个字符"
+            );
+
         return false;
     }
 
@@ -201,8 +443,15 @@ bool UserService::recharge(int id, double amount, double &newBalance, QString &e
 {
     errorMessage.clear();
     newBalance = 0.0;
-    if (amount <= 0.0) {
-        errorMessage = QStringLiteral("充值金额必须大于 0");
+    if (amount < 0.01
+        || amount > 10000.00) {
+
+        errorMessage =
+            QStringLiteral(
+                "充值金额必须在 "
+                "0.01 - 10000.00 元之间"
+            );
+
         return false;
     }
 

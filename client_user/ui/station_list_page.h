@@ -51,6 +51,8 @@ private:
     core::StationService *m_service = nullptr;
 
     QComboBox *m_regionCombo = nullptr;
+    QPushButton *m_smartSortButton = nullptr;
+    QPushButton *m_distanceSortButton = nullptr;
     QLineEdit *m_addressEdit = nullptr;
     QPushButton *m_locateBtn = nullptr;
     QLabel *m_locationLabel = nullptr;

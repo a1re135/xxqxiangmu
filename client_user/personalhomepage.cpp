@@ -2,6 +2,9 @@
 #include "ui_personalhomepage.h"
 #include "loginwindow.h"
 #include "ordershistorydialog.h"
+#if NCS_HAS_CAMERA
+#include "avatarcapturedialog.h"
+#endif
 
 #include <QFileDialog>
 #include <QPixmap>
@@ -16,6 +19,10 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QVBoxLayout>
+#include <QMenu>
+
+#include <QDir>
+#include <QStandardPaths>
 
 namespace {
 const char *kSuccess = "#22C55E";
@@ -290,6 +297,7 @@ PersonalHomePage::PersonalHomePage(UserService &userService, QWidget *parent)
 {
     ui->setupUi(this);
     setFixedSize(420, 760); // .ui 中已设置 min/max size，这里再保险一层
+    ui->nicknameEdit->setMaxLength(20);
 
     setStyleSheet(
         "QMainWindow {"
@@ -469,7 +477,21 @@ PersonalHomePage::PersonalHomePage(UserService &userService, QWidget *parent)
     )");
     applyCardShadows();
 
-    ui->rechargeEdit->setValidator(new QDoubleValidator(0.01, 100000, 2, this));
+    auto *rechargeValidator =
+        new QDoubleValidator(
+            0.01,
+            10000.00,
+            2,
+            this
+        );
+
+    rechargeValidator->setNotation(
+        QDoubleValidator::StandardNotation
+    );
+
+    ui->rechargeEdit->setValidator(
+        rechargeValidator
+    );
 
     ui->avatarLabel->installEventFilter(this);
 
@@ -562,15 +584,63 @@ void PersonalHomePage::refreshDisplay()
     ui->phoneLabel->setText(maskPhone(m_user.phone));
     ui->balanceValueLabel->setText(QString("¥ %1").arg(m_user.balance, 0, 'f', 2));
 
-    if (!m_user.avatarPath.isEmpty()) {
-        QPixmap pix(m_user.avatarPath);
-        if (!pix.isNull()) {
-            ui->avatarLabel->setText("");
-            ui->avatarLabel->setPixmap(pix);
-        }
+    QString resolvedAvatarPath =
+        m_user.avatarPath;
+
+
+    if (!resolvedAvatarPath.isEmpty()
+        && !QDir::isAbsolutePath(
+            resolvedAvatarPath)) {
+
+        const QString dataRoot =
+            QStandardPaths::writableLocation(
+                QStandardPaths::
+                    GenericDataLocation
+            );
+
+        resolvedAvatarPath =
+            QDir(dataRoot).filePath(
+                QStringLiteral(
+                    "NCS_Charging_Platform/%1"
+                ).arg(
+                    resolvedAvatarPath
+                )
+            );
+    }
+
+
+    QPixmap avatarPixmap;
+
+    if (!resolvedAvatarPath.isEmpty()) {
+        avatarPixmap.load(
+            resolvedAvatarPath
+        );
+    }
+
+
+    if (!avatarPixmap.isNull()) {
+
+        ui->avatarLabel->setText(
+            QString()
+        );
+
+        ui->avatarLabel->setPixmap(
+            avatarPixmap.scaled(
+                ui->avatarLabel->size(),
+                Qt::KeepAspectRatioByExpanding,
+                Qt::SmoothTransformation
+            )
+        );
+
     } else {
-        ui->avatarLabel->setPixmap(QPixmap());
-        ui->avatarLabel->setText("👤");
+
+        ui->avatarLabel->setPixmap(
+            QPixmap()
+        );
+
+        ui->avatarLabel->setText(
+            QStringLiteral("👤")
+        );
     }
 
     refreshStatusBadge();
@@ -593,44 +663,271 @@ void PersonalHomePage::refreshStatusBadge()
 
 void PersonalHomePage::onChangeAvatarClicked()
 {
-    const QString path = QFileDialog::getOpenFileName(this, "选择头像图片", QString(),
-                                                        "图片文件 (*.png *.jpg *.jpeg *.bmp)");
-    if (path.isEmpty()) return;
+    QMenu menu(this);
 
-    QString err;
-    if (!m_userService.updateAvatar(m_user.id, path, err)) {
-        QMessageBox::warning(this, "更新失败", err);
+    menu.setStyleSheet(
+        QStringLiteral(R"(
+            QMenu {
+                background:#14243C;
+                border:1px solid #264B70;
+                border-radius:8px;
+                padding:6px;
+            }
+
+            QMenu::item {
+                color:#E5EFFF;
+                padding:10px 22px;
+                border-radius:6px;
+                font-size:13px;
+            }
+
+            QMenu::item:selected {
+                background:#123F37;
+                color:#34D399;
+            }
+        )")
+    );
+
+    menu.setMinimumWidth(180);
+
+
+#if NCS_HAS_CAMERA
+
+    QAction *cameraAction =
+        menu.addAction(
+            QStringLiteral("📷 拍照上传")
+        );
+
+#endif
+
+
+    QAction *fileAction =
+        menu.addAction(
+            QStringLiteral("🖼 从本地选择")
+        );
+
+
+    QAction *chosen =
+        menu.exec(
+            ui->avatarLabel
+                ->mapToGlobal(
+                    QPoint(
+                        0,
+                        ui->avatarLabel
+                            ->height()
+                        + 4
+                    )
+                )
+        );
+
+
+    if (!chosen) {
         return;
     }
-    reloadFromService();
+
+
+#if NCS_HAS_CAMERA
+
+    if (chosen == cameraAction) {
+        applyAvatarFromCamera();
+        return;
+    }
+
+#endif
+
+
+    if (chosen == fileAction) {
+
+        const QString path =
+            QFileDialog::getOpenFileName(
+                this,
+                QStringLiteral(
+                    "选择头像图片"
+                ),
+                QString(),
+                QStringLiteral(
+                    "图片文件 "
+                    "(*.png *.jpg *.jpeg *.bmp)"
+                )
+            );
+
+
+        if (path.isEmpty()) {
+            return;
+        }
+
+
+        QString errorMessage;
+
+        if (!m_userService.updateAvatar(
+                m_user.id,
+                path,
+                errorMessage)) {
+
+            QMessageBox::warning(
+                this,
+                QStringLiteral("更新失败"),
+                errorMessage
+            );
+
+            return;
+        }
+
+
+        reloadFromService();
+    }
 }
+
+#if NCS_HAS_CAMERA
+
+void PersonalHomePage::applyAvatarFromCamera()
+{
+    AvatarCaptureDialog dialog(this);
+
+
+    if (dialog.exec()
+        != QDialog::Accepted) {
+
+        return;
+    }
+
+
+    const QString capturedPath =
+        dialog.capturedFilePath();
+
+
+    if (capturedPath.isEmpty()) {
+        return;
+    }
+
+
+    QString errorMessage;
+
+
+    if (!m_userService.updateAvatar(
+            m_user.id,
+            capturedPath,
+            errorMessage)) {
+
+        QMessageBox::warning(
+            this,
+            QStringLiteral(
+                "头像更新失败"
+            ),
+            errorMessage
+        );
+
+        return;
+    }
+
+
+    reloadFromService();
+
+
+    QMessageBox::information(
+        this,
+        QStringLiteral("头像更新"),
+        QStringLiteral(
+            "头像已更新成功"
+        )
+    );
+}
+
+#endif
 
 void PersonalHomePage::onSaveNicknameClicked()
 {
-    const QString nickname = ui->nicknameEdit->text().trimmed();
+    const QString nickname =
+        ui->nicknameEdit
+            ->text()
+            .trimmed();
+
     if (nickname.isEmpty()) {
-        ui->profileHintLabel->setStyleSheet(QString("color:%1; font-size:11px;").arg(kDanger));
-        ui->profileHintLabel->setText("昵称不能为空");
+        ui->profileHintLabel->setStyleSheet(
+            QString(
+                "color:%1;"
+                "font-size:11px;"
+            ).arg(kDanger)
+        );
+
+        ui->profileHintLabel->setText(
+            QStringLiteral(
+                "昵称不能为空"
+            )
+        );
+
         return;
     }
+
+    if (nickname.size() > 20) {
+        ui->profileHintLabel->setStyleSheet(
+            QString(
+                "color:%1;"
+                "font-size:11px;"
+            ).arg(kDanger)
+        );
+
+        ui->profileHintLabel->setText(
+            QStringLiteral(
+                "昵称长度不能超过20个字符"
+            )
+        );
+
+        return;
+    }
+
+
     QString err;
-    if (!m_userService.updateNickname(m_user.id, nickname, err)) {
-        ui->profileHintLabel->setStyleSheet(QString("color:%1; font-size:11px;").arg(kDanger));
-        ui->profileHintLabel->setText(err);
+
+    if (!m_userService.updateNickname(
+            m_user.id,
+            nickname,
+            err)) {
+
+        ui->profileHintLabel->setStyleSheet(
+            QString(
+                "color:%1;"
+                "font-size:11px;"
+            ).arg(kDanger)
+        );
+
+        ui->profileHintLabel->setText(
+            err
+        );
+
         return;
     }
+
+
     reloadFromService();
-    ui->profileHintLabel->setStyleSheet(QString("color:%1; font-size:11px;").arg(kSuccess));
-    ui->profileHintLabel->setText("昵称已更新");
+
+    ui->profileHintLabel->setStyleSheet(
+        QString(
+            "color:%1;"
+            "font-size:11px;"
+        ).arg(kSuccess)
+    );
+
+    ui->profileHintLabel->setText(
+        QStringLiteral(
+            "昵称已更新"
+        )
+    );
 }
 
 void PersonalHomePage::onRechargeClicked()
 {
     bool ok = false;
     const double amount = ui->rechargeEdit->text().toDouble(&ok);
-    if (!ok || amount <= 0) {
+    if (!ok
+        || amount < 0.01
+        || amount > 10000.00) {
         ui->walletHintLabel->setStyleSheet(QString("color:%1; font-size:11px;").arg(kDanger));
-        ui->walletHintLabel->setText("请输入正确的充值金额");
+        ui->walletHintLabel->setText(
+            QStringLiteral(
+                "请输入 0.01 - 10000.00 元的充值金额"
+            )
+        );
         return;
     }
 

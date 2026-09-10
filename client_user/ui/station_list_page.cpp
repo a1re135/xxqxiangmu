@@ -175,33 +175,279 @@ StationListPage::StationListPage(core::StationService *service, QWidget *parent)
     m_scrollArea->setFrameShape(QFrame::NoFrame);
     m_scrollArea->setWidget(m_cardsContainer);
 
-    auto *title = new QLabel(QStringLiteral("附近充电站"), this);
-    title->setObjectName(QStringLiteral("pageTitle"));
-    auto *subtitle = new QLabel(QStringLiteral("发现身边电站，让每次出发都满电"), this);
-    subtitle->setObjectName(QStringLiteral("pageSubtitle"));
-    auto *locationPanel = new QFrame(this);
-    locationPanel->setObjectName(QStringLiteral("locationPanel"));
-    auto *locationLayout = new QVBoxLayout(locationPanel);
-    locationLayout->setContentsMargins(14, 14, 14, 12);
+    // ============================================================
+    // Page title
+    // ============================================================
+
+    auto *title =
+        new QLabel(
+            QStringLiteral("附近充电站"),
+            this
+        );
+
+    title->setObjectName(
+        QStringLiteral("pageTitle")
+    );
+
+    auto *subtitle =
+        new QLabel(
+            QStringLiteral(
+                "发现身边电站，让每次出发都满电"
+            ),
+            this
+        );
+
+    subtitle->setObjectName(
+        QStringLiteral("pageSubtitle")
+    );
+
+
+    // ============================================================
+    // Location panel
+    // ============================================================
+
+    auto *locationPanel =
+        new QFrame(this);
+
+    locationPanel->setObjectName(
+        QStringLiteral("locationPanel")
+    );
+
+    auto *locationLayout =
+        new QVBoxLayout(
+            locationPanel
+        );
+
+    locationLayout->setContentsMargins(
+        14, 14, 14, 12
+    );
+
     locationLayout->setSpacing(10);
-    locationLayout->addWidget(m_regionCombo);
-    locationLayout->addLayout(locateBar);
-    locationLayout->addLayout(infoBar);
-    auto *section = new QLabel(QStringLiteral("电站列表 · 距离优先"), this);
-    section->setObjectName(QStringLiteral("sectionTitle"));
 
-    auto *pageLayout = new QVBoxLayout(this);
-    pageLayout->setContentsMargins(20, 4, 20, 0);
-    pageLayout->setSpacing(10);
-    pageLayout->addWidget(title);
-    pageLayout->addWidget(subtitle);
-    pageLayout->addSpacing(4);
-    pageLayout->addWidget(locationPanel);
-    pageLayout->addWidget(m_toastLabel);
-    pageLayout->addWidget(section);
-    pageLayout->addWidget(m_scrollArea, 1);
+    locationLayout->addWidget(
+        m_regionCombo
+    );
 
-    // ---------- 信号 ----------
+    locationLayout->addLayout(
+        locateBar
+    );
+
+    locationLayout->addLayout(
+        infoBar
+    );
+
+
+    // ============================================================
+    // Station list section title
+    // ============================================================
+
+    auto *section =
+        new QLabel(
+            QStringLiteral("电站列表"),
+            this
+        );
+
+    section->setObjectName(
+        QStringLiteral("sectionTitle")
+    );
+
+    section->setStyleSheet(
+        QStringLiteral(
+            "QLabel {"
+            "color:#F5F7FA;"
+            "font-size:16px;"
+            "font-weight:800;"
+            "background:transparent;"
+            "}"
+        )
+    );
+
+
+    // ============================================================
+    // Sorting buttons
+    // ============================================================
+
+    m_smartSortButton =
+        new QPushButton(
+            QStringLiteral("智能推荐"),
+            this
+        );
+
+    m_distanceSortButton =
+        new QPushButton(
+            QStringLiteral("距离优先"),
+            this
+        );
+
+
+    m_smartSortButton->setCheckable(
+        true
+    );
+
+    m_distanceSortButton->setCheckable(
+        true
+    );
+
+    m_smartSortButton->setAutoExclusive(
+        true
+    );
+
+    m_distanceSortButton->setAutoExclusive(
+        true
+    );
+
+
+    // Default mode = smart recommendation
+    m_smartSortButton->setChecked(
+        true
+    );
+
+
+    const QString sortButtonStyle =
+        QStringLiteral(R"(
+
+            QPushButton {
+                min-width:72px;
+                min-height:32px;
+
+                background:#132A43;
+                color:#AFC3D8;
+
+                border:1px solid #294B6D;
+                border-radius:8px;
+
+                padding:0px 10px;
+
+                font-size:11px;
+                font-weight:800;
+            }
+
+            QPushButton:hover {
+                background:#173656;
+                color:#FFFFFF;
+                border-color:#3B638A;
+            }
+
+            QPushButton:checked {
+                background:#123F37;
+                color:#34D399;
+
+                border:1px solid #1F806A;
+            }
+
+            QPushButton:checked:hover {
+                background:#165044;
+                color:#4ADEA8;
+            }
+
+        )");
+
+
+    m_smartSortButton->setStyleSheet(
+        sortButtonStyle
+    );
+
+    m_distanceSortButton->setStyleSheet(
+        sortButtonStyle
+    );
+
+
+    // ============================================================
+    // Section row
+    // ============================================================
+
+    auto *sectionRow =
+        new QHBoxLayout;
+
+    sectionRow->setContentsMargins(
+        0, 0, 0, 0
+    );
+
+    sectionRow->setSpacing(6);
+
+    sectionRow->addWidget(
+        section
+    );
+
+    sectionRow->addStretch();
+
+    sectionRow->addWidget(
+        m_smartSortButton
+    );
+
+    sectionRow->addWidget(
+        m_distanceSortButton
+    );
+
+
+    // ============================================================
+    // Main page layout
+    // ============================================================
+
+    auto *pageLayout =
+        new QVBoxLayout(this);
+
+    pageLayout->setContentsMargins(
+        16,
+        16,
+        16,
+        10
+    );
+
+    pageLayout->setSpacing(
+        10
+    );
+
+
+    pageLayout->addWidget(
+        title
+    );
+
+    pageLayout->addWidget(
+        subtitle
+    );
+
+    pageLayout->addWidget(
+        locationPanel
+    );
+
+    pageLayout->addWidget(
+        m_toastLabel
+    );
+
+    pageLayout->addLayout(
+        sectionRow
+    );
+
+    pageLayout->addWidget(
+        m_scrollArea,
+        1
+    );
+
+
+    // ==========================================
+    // Sorting button signals
+    // ==========================================
+
+    connect(
+        m_smartSortButton,
+        &QPushButton::clicked,
+        this,
+        [this]()
+        {
+            refresh();
+        }
+    );
+
+    connect(
+        m_distanceSortButton,
+        &QPushButton::clicked,
+        this,
+        [this]()
+        {
+            refresh();
+        }
+    );
     connect(m_locateBtn, &QPushButton::clicked, this,
             &StationListPage::onLocateClicked);
     connect(m_refreshBtn, &QPushButton::clicked, this, &StationListPage::refresh);
@@ -275,13 +521,41 @@ void StationListPage::onLocated(const core::LocationResult &result)
     refresh();
 }
 
-QVector<core::StationListItem> StationListPage::currentList() const
+QVector<core::StationListItem>
+StationListPage::currentList() const
 {
     if (!m_service) {
         return {};
     }
-    return m_service->listStationsByDistance(m_service->lastLatitude(),
-                                             m_service->lastLongitude());
+
+
+    const double latitude =
+        m_service->lastLatitude();
+
+    const double longitude =
+        m_service->lastLongitude();
+
+
+    const bool distanceOnly =
+        m_distanceSortButton
+        && m_distanceSortButton
+               ->isChecked();
+
+    if (distanceOnly) {
+
+        return m_service
+            ->listStationsByDistance(
+                latitude,
+                longitude
+            );
+    }
+
+
+    return m_service
+        ->listStationsSmartRecommended(
+            latitude,
+            longitude
+        );
 }
 
 void StationListPage::refresh()

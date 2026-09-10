@@ -158,13 +158,13 @@ createApp({
           axisPointer: { type: "shadow" },
           formatter: params => {
             const p = params[0];
-            return `${p.name}<br/>营收：${money(p.value)}`;
+            return `${p.name}<br/>充电量：${Number(p.value).toFixed(2)} kWh`;
           }
         },
         grid: { left: 100, right: 20, top: 12, bottom: 18, containLabel: true },
         xAxis: {
           type: "value",
-          axisLabel: { color: theme().muted, formatter: v => `¥${v}` },
+          axisLabel: { color: theme().muted, formatter: v => `${v} kWh` },
           splitLine: { lineStyle: { color: theme().grid } },
           axisLine: { lineStyle: { color: theme().grid } }
         },
@@ -177,7 +177,7 @@ createApp({
           axisTick: { show: false }
         },
         series: [{
-          name: "营收",
+          name: "充电量",
           type: "bar",
           barWidth: 12,
           data: items.map(x => Number(x.value) || 0),
@@ -227,7 +227,7 @@ createApp({
           axisLine: { show: false }
         },
         series: [{
-          name: "营收",
+          name: "充电量",
           type: "line",
           smooth: true,
           symbol: "circle",

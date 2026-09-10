@@ -19,3 +19,12 @@ logs/
 *.tmp
 *.swp
 *~
+
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+
+ml/training_data.csv
+ml/evaluation_results.csv

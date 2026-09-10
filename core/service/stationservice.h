@@ -47,6 +47,15 @@ struct StationListItem {
     double distanceKm = 0.0;
     double latitude = 0.0;
     double longitude = 0.0;
+
+    bool hasPrediction = false;
+
+    double predictedLoad = 0.0;
+    int predictedFreeChargers = -1;
+    bool predictedPeak = false;
+
+    double recommendationScore = 0.0;
+    bool recommended = false;
 };
 
 class StationService : public QObject {
@@ -81,6 +90,12 @@ public:
     // 腾讯地图 Key：环境变量 NCS_TENCENT_KEY > config/app.ini [map] tencent_key
     static QString loadTencentKey();
 
+    QVector<StationListItem>
+    listStationsSmartRecommended(
+        double latitude,
+        double longitude
+    ) const;
+
 signals:
     void located(const LocationResult &result);
 
@@ -105,6 +120,16 @@ private:
     // 地理编码在途请求的上下文
     QString m_pendingRegion;
     QString m_pendingAddress;
+
+    bool loadNextPrediction(
+        int stationId,
+        const QString &generatedTime,
+        double &predictedLoad,
+        int &predictedFreeChargers,
+        bool &isPeak
+    ) const;
+
+    QString latestPredictionBatch() const;
 };
 
 } // namespace core
