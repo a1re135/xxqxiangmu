@@ -461,6 +461,20 @@ void OrderSettlementDialog::buildUi()
        m_details
    );
 
+   m_liveDetails = new QLabel(m_content);
+   m_liveDetails->setObjectName(QStringLiteral("liveDetails"));
+   m_liveDetails->setWordWrap(true);
+   m_liveDetails->setTextFormat(Qt::PlainText);
+   m_liveDetails->setStyleSheet(
+       QStringLiteral(
+           "QLabel#liveDetails {"
+           "color:#EAF3FF;"
+           "font-size:15px;"
+           "padding:8px 0;"
+           "}"
+       )
+   );
+
 
    // ==============================
    // Charging progress

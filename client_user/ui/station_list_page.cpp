@@ -11,6 +11,8 @@
 #include <QTimer>
 #include <QVBoxLayout>
 #include <QListView>
+#include <QElapsedTimer>
+#include <QDebug>
 
 #include "station_card_widget.h"
 
@@ -560,10 +562,19 @@ StationListPage::currentList() const
 
 void StationListPage::refresh()
 {
+    QElapsedTimer timer;
+    timer.start();
+
     const QVector<core::StationListItem> items = currentList();
     rebuildList(items);
-}
 
+    qDebug()
+        << "[NFR-P-01] Station list refresh:"
+        << items.size()
+        << "stations,"
+        << timer.elapsed()
+        << "ms";
+}
 void StationListPage::rebuildList(const QVector<core::StationListItem> &items)
 {
     clearCards();

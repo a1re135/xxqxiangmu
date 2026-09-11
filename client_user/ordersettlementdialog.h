@@ -52,6 +52,7 @@ private:
 
     QLabel *m_title = nullptr;
     QLabel *m_details = nullptr;
+    QLabel *m_liveDetails = nullptr;
     QLabel *m_socLabel = nullptr;
     QProgressBar *m_socBar = nullptr;
     QLabel *m_notice = nullptr;
