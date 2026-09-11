@@ -212,6 +212,8 @@ void MainWindow::refreshUserManagement()
         return;
     }
 
+    const int previousUserId = m_selectedUserId;
+
     m_userRecords = users;
     m_userModel->removeRows(0, m_userModel->rowCount());
 
@@ -255,11 +257,22 @@ void MainWindow::refreshUserManagement()
         return;
     }
 
-    m_userTable->selectRow(0);
-    m_selectedUserId = users.first().id;
+    int targetRow = -1;
+    for (int row = 0; row < users.size(); ++row) {
+        if (users.at(row).id == previousUserId) {
+            targetRow = row;
+            break;
+        }
+    }
+    if (targetRow < 0) {
+        targetRow = 0;
+    }
+
+    m_userTable->selectRow(targetRow);
+    m_selectedUserId = users.at(targetRow).id;
     m_userStatusButton->setEnabled(true);
     m_userStatusButton->setText(
-        users.first().status == 0 ? QStringLiteral("解冻用户") : QStringLiteral("冻结用户"));
+        users.at(targetRow).status == 0 ? QStringLiteral("解冻用户") : QStringLiteral("冻结用户"));
 }
 
 

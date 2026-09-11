@@ -100,7 +100,7 @@ MainWindow::MainWindow(QWidget *parent)
     refreshDashboard();
 
     m_autoRefreshTimer = new QTimer(this);
-    m_autoRefreshTimer->setInterval(3000); // every 3 seconds
+    m_autoRefreshTimer->setInterval(3000);
 
     connect(
         m_autoRefreshTimer,
@@ -124,7 +124,6 @@ MainWindow::MainWindow(QWidget *parent)
             switch (index) {
 
             case 0:
-                // 营收分析 - manual refresh only
                 break;
 
             case 1:
@@ -136,7 +135,7 @@ MainWindow::MainWindow(QWidget *parent)
                 break;
 
             case 3:
-                refreshStationManagement();
+                refreshStationManagement(m_selectedStationId);
                 break;
 
             case 4:
@@ -208,7 +207,6 @@ void MainWindow::selectPage(int index)
         uiObject<QLabel>(this, QStringLiteral("pageTitleLabel"))->setText(titles.at(index));
     }
 
-    // Revenue is the only page currently backed by UC-A-03 data.
     if (index == 0) {
         refreshDashboard();
     } else if (index == 1) {

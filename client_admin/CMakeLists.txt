@@ -54,6 +54,11 @@ target_link_libraries(client_admin
         ncs_core
 )
 
+target_include_directories(client_admin
+    PRIVATE
+        ${CMAKE_SOURCE_DIR}/core
+)
+
 target_compile_definitions(client_admin
     PRIVATE
         NCS_PROJECT_ROOT="${CMAKE_SOURCE_DIR}"

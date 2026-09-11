@@ -33,6 +33,8 @@ void MainWindow::applyChargerFilters()
 {
     if (!m_chargerModel) return;
 
+    const int previousChargerId = selectedChargerId();
+
     const int stationId = m_stationFilter ? m_stationFilter->currentData().toInt() : -1;
     const int status = m_statusFilter ? m_statusFilter->currentData().toInt() : -1;
     const QString keyword = m_chargerSearch
@@ -83,8 +85,18 @@ void MainWindow::applyChargerFilters()
         m_chargerTable->clearSelection();
     }
 
+    if (previousChargerId > 0) {
+        for (int row = 0; row < m_chargerModel->rowCount(); ++row) {
+            const QModelIndex index = m_chargerModel->index(row, 0);
+            if (index.data(Qt::UserRole).toInt() == previousChargerId) {
+                m_chargerTable->setCurrentIndex(index);
+                m_chargerTable->selectRow(row);
+                break;
+            }
+        }
+    }
+
     if (m_chargerModel->rowCount() == 0) {
-        // Keep an explicit empty-data line in the table rather than failing silently.
         QList<QStandardItem *> emptyRow;
         auto *empty = new QStandardItem(QStringLiteral("暂无符合条件的电桩"));
         empty->setForeground(QBrush(QColor(QStringLiteral("#7E909B"))));
