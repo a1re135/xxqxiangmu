@@ -1,0 +1,43 @@
+{
+  "stage": "UC-M-01",
+  "source_database": "/home/bit/.local/share/NCS_Charging_Platform/charge_platform.db",
+  "source_status_filter": 2,
+  "aggregation": "station + calendar date + hour",
+  "time_bucket": "start_time truncated to hour",
+  "missing_hours_filled_with_zero": true,
+  "lag_features_hours": [
+    1,
+    24,
+    168
+  ],
+  "rolling_mean_window_hours": 24,
+  "rolling_mean_excludes_current_target": true,
+  "station_encoding": "station id ordered ascending, encoded from 0",
+  "weather": "deterministic simulated temperature and precipitation flag",
+  "target": "charge_load_kwh",
+  "station_count": 5,
+  "completed_order_count": 90,
+  "hourly_row_count": 2947,
+  "training_row_count": 2107,
+  "time_range_start": "2026-08-06 10:00:00",
+  "time_range_end": "2026-09-04 11:00:00",
+  "feature_columns": [
+    "hour",
+    "weekday",
+    "is_weekend",
+    "is_holiday",
+    "lag_1h",
+    "lag_24h",
+    "lag_168h",
+    "rolling_mean_24h",
+    "station_encoding",
+    "temperature_c",
+    "is_precipitation"
+  ],
+  "target_column": "charge_load_kwh",
+  "outputs": {
+    "training_csv": "/home/bit/Projects/xxqxiangmu/ml/data/charging_load_training.csv",
+    "hourly_csv": "/home/bit/Projects/xxqxiangmu/ml/data/hourly_aggregated.csv",
+    "station_encoder_json": "/home/bit/Projects/xxqxiangmu/ml/data/station_encoder.json"
+  }
+}

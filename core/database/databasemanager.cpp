@@ -573,50 +573,191 @@ bool DatabaseManager::insertSeedData()
 
     int historicalOrderCount = 0;
 
-    for (int daysAgo = 30; daysAgo >= 1; --daysAgo) {
+    // Generate a realistic 30-day historical workload for ML training.
+    // The demand pattern intentionally contains repeatable hourly,
+    // weekday/weekend, and station-specific signals while retaining
+    // controlled noise so RandomForest has meaningful features to learn.
+    const int historicalDays = 30;
+    const int ordersPerDay = 8;
 
-        for (int orderIndex = 0; orderIndex < 3; ++orderIndex) {
+    // Fixed seed keeps the demo training data reproducible across rebuilds.
+    QRandomGenerator historicalRng(20260911u);
 
-            int userId =
+    for (int daysAgo = historicalDays; daysAgo >= 1; --daysAgo) {
+
+        QDate historyDate =
+            QDateTime::currentDateTime()
+                .addDays(-daysAgo)
+                .date();
+
+        const int dayOfWeek = historyDate.dayOfWeek(); // 1=Mon ... 7=Sun
+        const bool isWeekend =
+            dayOfWeek == 6 || dayOfWeek == 7;
+
+        // Weekday/weekend multiplier provides a learnable weekly pattern.
+        const double dayMultiplier =
+            isWeekend ? 0.78 : 1.0;
+
+        for (int orderIndex = 0;
+             orderIndex < ordersPerDay;
+             ++orderIndex) {
+
+            // Demand-focused charging windows with a small amount of noise.
+            // This creates repeatable time-of-day peaks without making the
+            // historical data perfectly deterministic.
+            const int demandHours[] = {
+                7, 8, 9, 10,
+                12, 13, 18, 19
+            };
+
+            const int baseHour =
+                demandHours[orderIndex];
+
+            const int hourJitter =
+                historicalRng.bounded(0, 2);
+
+            int hour =
+                qBound(7, baseHour + hourJitter, 21);
+
+            const int minute =
+                historicalRng.bounded(0, 60);
+
+            QDateTime startTime =
+                QDateTime(
+                    historyDate,
+                    QTime(hour, minute, 0)
+                );
+
+            // Choose a station with stable station-specific demand levels.
+            // Chargers are intentionally reused across different historical
+            // dates because these are completed historical orders.
+            const int stationSlot =
+                (orderIndex + (daysAgo % 5)) % 5;
+
+            QVector<int> stationChargers;
+            QSqlQuery stationChargerQuery(m_database);
+            stationChargerQuery.prepare(
+                "SELECT id "
+                "FROM charger "
+                "WHERE station_id = :station_id "
+                "ORDER BY id"
+            );
+            stationChargerQuery.bindValue(
+                ":station_id",
+                stationSlot + 1
+            );
+
+            if (!stationChargerQuery.exec()) {
+                qDebug()
+                    << "Failed to get historical chargers:"
+                    << stationChargerQuery.lastError().text();
+                m_database.rollback();
+                return false;
+            }
+
+            while (stationChargerQuery.next()) {
+                stationChargers.append(
+                    stationChargerQuery.value(0).toInt()
+                );
+            }
+
+            if (stationChargers.isEmpty()) {
+                qDebug()
+                    << "No chargers available for historical station:"
+                    << stationSlot + 1;
+                m_database.rollback();
+                return false;
+            }
+
+            const int chargerId =
+                stationChargers[
+                    historicalRng.bounded(
+                        stationChargers.size()
+                    )
+                ];
+
+            const int userId =
                 userIds[
-                    QRandomGenerator::global()->bounded(
+                    historicalRng.bounded(
                         userIds.size()
                     )
                 ];
 
-            int chargerId =
-                chargerIds[
-                    QRandomGenerator::global()->bounded(
-                        chargerIds.size()
+            // Smooth daily factor adds realistic variation while preserving
+            // the weekly/hourly structure required by the forecasting model.
+            const double dailyNoise =
+                0.92 +
+                (historicalRng.generateDouble() * 0.16);
+
+            // Hour-of-day demand multiplier.
+            double hourMultiplier = 0.75;
+            switch (hour) {
+            case 7:
+                hourMultiplier = 0.90;
+                break;
+            case 8:
+                hourMultiplier = 1.15;
+                break;
+            case 9:
+                hourMultiplier = 1.25;
+                break;
+            case 10:
+                hourMultiplier = 1.35;
+                break;
+            case 12:
+                hourMultiplier = 1.05;
+                break;
+            case 13:
+                hourMultiplier = 1.25;
+                break;
+            case 18:
+                hourMultiplier = 1.20;
+                break;
+            case 19:
+                hourMultiplier = 1.10;
+                break;
+            default:
+                break;
+            }
+
+            // Stable station profile: each station has a slightly different
+            // demand level, helping the model learn station encoding.
+            const double stationMultiplier[] = {
+                1.10, 0.95, 0.88, 1.20, 0.82
+            };
+
+            const double profileMultiplier =
+                stationMultiplier[stationSlot]
+                * hourMultiplier
+                * dayMultiplier
+                * dailyNoise;
+
+            const double baseEnergy =
+                24.0 +
+                (historicalRng.generateDouble() * 10.0);
+
+            const double energy =
+                qMax(
+                    10.0,
+                    qMin(
+                        60.0,
+                        baseEnergy * profileMultiplier
                     )
-                ];
+                );
 
-            int hour =
-                QRandomGenerator::global()->bounded(7, 22);
+            const int durationMinutes =
+                qBound(
+                    30,
+                    static_cast<int>(
+                        energy / 0.55
+                    ),
+                    120
+                );
 
-            int minute =
-                QRandomGenerator::global()->bounded(0, 60);
-
-            QDateTime startTime =
-                QDateTime::currentDateTime()
-                    .addDays(-daysAgo);
-
-            startTime.setTime(
-                QTime(hour, minute, 0)
-            );
-
-            int durationMinutes =
-                QRandomGenerator::global()->bounded(30, 121);
-
-            QDateTime endTime =
+            const QDateTime endTime =
                 startTime.addSecs(
                     durationMinutes * 60
                 );
-
-            double energy =
-                QRandomGenerator::global()->bounded(
-                    1000, 6001
-                ) / 100.0;
 
             QSqlQuery priceQuery(m_database);
 
@@ -644,12 +785,13 @@ bool DatabaseManager::insertSeedData()
                 return false;
             }
 
-            double price =
+            const double price =
                 priceQuery.value(0).toDouble();
 
-            double amount =
-                qRound64(energy * price * 100.0)
-                / 100.0;
+            const double amount =
+                qRound64(
+                    energy * price * 100.0
+                ) / 100.0;
 
             orderQuery.bindValue(
                 ":user_id",
@@ -677,7 +819,7 @@ bool DatabaseManager::insertSeedData()
 
             orderQuery.bindValue(
                 ":energy",
-                energy
+                qRound64(energy * 100.0) / 100.0
             );
 
             orderQuery.bindValue(
@@ -1056,3 +1198,4 @@ bool DatabaseManager::initialize()
 
     return true;
 }
+
